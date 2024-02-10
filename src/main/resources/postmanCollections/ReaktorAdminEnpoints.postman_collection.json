@@ -1,0 +1,387 @@
+{
+	"info": {
+		"_postman_id": "281c7486-328e-403a-933a-4ab07a946a56",
+		"name": "ReaktorAdminEnpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29925228"
+	},
+	"item": [
+		{
+			"name": "postComputerCommandLine",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"commands\": []\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/commandLine",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"commandLine"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postComputerShutdown",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn1235119",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/shutdown",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"shutdown"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postComputerReboot",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn1235119",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/shutdown",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"shutdown"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postPeripheral",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text"
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\r\n    {\r\n        \"isOpen\":false,\r\n        \"component\":\"USB1\",\r\n        \"cuantity\":1\r\n    },\r\n    {\r\n        \"isOpen\":true,\r\n        \"component\":\"USB2\",\r\n        \"cuantity\":1\r\n    }\r\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/peripheral",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"peripheral"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "sendScreenshotOrder",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text"
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/screenshot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"screenshot"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getScreenshots",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/computer/admin/screenshot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"computer",
+						"admin",
+						"screenshot"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postComputerExecFile",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					},
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "plant",
+						"value": "0",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "execFile",
+							"type": "file",
+							"src": "/C:/Users/casaj/Downloads/README.md"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "sendSofttware",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text"
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\r\n    {\r\n        \"application\":\"\"\r\n    }\r\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/software",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"software"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "uninstallSoftware",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "0.5",
+						"type": "text"
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text"
+					},
+					{
+						"key": "professor",
+						"value": "paco",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "[\r\n    {\r\n        \"application\":\"\"\r\n    }\r\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/software",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"software"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "editComputer",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "05601560650165",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"serialNumber\": \"string\",\r\n  \"andaluciaId\": \"string\",\r\n  \"computerNumber\": \"string\",\r\n  \"operativeSystem\": \"string\",\r\n  \"professor\": \"string\",\r\n  \"location\": {\r\n    \"classroom\": \"string\",\r\n    \"plant\": 0,\r\n    \"trolley\": \"string\"\r\n  },\r\n  \"hardwareList\": [\r\n    {\r\n      \"component\": \"string\",\r\n      \"cuantity\": 0\r\n    }\r\n  ],\r\n  \"softwareList\": [\r\n    {\r\n      \"application\": \"string\"\r\n    }\r\n  ],\r\n  \"commandLine\": {\r\n    \"commands\": [\r\n      \"string\"\r\n    ]\r\n  },\r\n  \"monitorizationLog\": {\r\n    \"lastRemoteReset\": \"string\",\r\n    \"lastCommandsLine\": {\r\n      \"commands\": [\r\n        \"string\"\r\n      ]\r\n    },\r\n    \"lastRemoteWebUri\": \"string\",\r\n    \"lastInstall\": {\r\n      \"application\": \"string\"\r\n    },\r\n    \"lastUnistall\": {\r\n      \"application\": \"string\"\r\n    }\r\n  }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/computer/edit",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"computer",
+						"edit"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

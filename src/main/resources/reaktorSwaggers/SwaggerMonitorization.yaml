@@ -1,0 +1,425 @@
+swagger: '2.0'
+host: iesjandula.es
+basePath: /computers
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+info:
+  version: 1.0.0
+  title: IES Jándula Reaktor Website
+  description: This is the Reaktor swagger API
+  contact:
+    name: David Martinez Flores
+    email: dmarflo526@g.educaand.es
+    url: https://www.iesjandula.es/drupal/
+paths:
+#--------------------------MONITORIZATION-ENDEPOINTS-----------------------------------------------
+#--------------------------ENDPOINT---------------------------------------------------------------
+  /get/pendingActions:
+    #-----Get--------    
+    #-- GET THE COMPUTER ACTIONS TO DO  --
+    get:
+      operationId: getPendingActions
+      description: This endpoint is used to generate the pending actions that have to be performed on a computer, it will use an Actions object and the serial number of the computer
+      parameters:
+      - name: serialNumber
+        required: true
+        type: string
+        in: header
+        description: The computer identifier S/N
+      responses:
+        200:
+          description: The object Actions with the actions to do
+          schema:
+            $ref: '#/definitions/Actions'
+              
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+  /get/file:        
+    #-----GET--------
+    #-----GET , CFG FILE ,WIFI , EXECUTABLES ----
+    get:
+      operationId: getAnyFile
+      description: Getting the files , the computer send the serialNumber to identify
+      parameters:
+        - name: serialNumber
+          required: true
+          type: string
+          in: header
+          description: The computer s / n
+      produces:
+        - multipart/from-data
+      responses:
+        200:
+          description: Getting success
+          schema:
+            type: file
+        404:
+          description: Computer error getting  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+          
+            $ref: '#/definitions/ComputerError' 
+            
+  /get/screenshot:        
+    #-----GET--------
+    #-----GET THE SCREENSHOT ORDER ----
+    get:
+      operationId: getScreenshotOrder
+      description: Getting the screenshot order , the compuer send the serialNumber to identify
+      parameters:
+        - name: serialNumber
+          required: true
+          type: string
+          in: header
+          description: The computer s / n
+      responses:
+        200:
+          description: Getting success
+        404:
+          description: Computer error getting  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+  /send/screenshot:        
+    #-----Post--------
+    #-----SEND THE PERIODIC SCREENSHOT ORDER ----
+    post:
+      operationId: sendScreenshot
+      description: Send the screenshot
+      consumes:
+        - multipart/form-data
+      parameters:
+      - name: screenshot
+        type: file
+        required: true
+        in: formData
+        description: The screenshot
+      responses:
+        200:
+          description: Getting success
+        404:
+          description: Computer error getting  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+
+  /send/fullInfo:        
+    #-----Post--------    
+    #------SEND A FULL COMPUTER INFO BY ANY OF THE IDS-------
+    post:
+      operationId: sendFullComputer
+      description: Send the full computer info by serialNumber, andaluciaId, computerNumber
+      consumes:
+        - application/json
+      parameters:
+       - name: serialNumber
+         required: false
+         type: string
+         in: header
+         description: The computer identifier S/N
+        
+       - name: andaluciaId
+         required: false
+         type: string
+         in: header
+         description: The computer Andalucia id
+        
+       - name: computerNumber
+         required: false
+         type: string
+         in: header
+         description: The computer identifier number
+      
+       - name: computerInstance
+         in: body
+         required: true
+         schema:
+            $ref: '#/definitions/Computer'
+      
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+  /send/status:        
+    #-----Post--------    
+    #------SEND THE STATUS LIST-------
+    post:
+      operationId: sendStatusComputer
+      description: If the status is satisfactory or not, used for send the Status List to server
+      consumes:
+        - application/json
+      parameters:
+       - name: serialNumber
+         type: string
+         in: header
+         description: the serial number of the computer
+         required: true
+      
+       - name: statusList
+         in: body
+         required: true
+         schema:
+          items:
+            $ref: '#/definitions/Status'
+         description: the Status list
+            
+      responses:
+        200:
+          description: OK
+        404:
+          description: Monitorization error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+    
+#------------------------------OBJECTS DEFINITIONS-----------------------------
+definitions:
+#----------COMPUTER-------------------
+  Computer:
+    type: object
+    properties:
+      serialNumber:
+        type: string
+        description: The computer identifier S/N
+        
+      andaluciaId:
+        type: string
+        description: The computer Andalucia id
+        
+      computerNumber:
+        type: string
+        description: The computer identifier number
+        
+      operativeSystem:
+        type: string
+        description: The computer S.O
+      
+      professor:
+        type: string
+        description: The professor
+      
+      location:
+        $ref: '#/definitions/Location'
+      
+      hardwareList:
+        type: array
+        description: The hardware components and peripherals
+        items: 
+            $ref: '#/definitions/HardwareComponent'
+              
+      softwareList:
+        type: array
+        items: 
+            $ref: '#/definitions/Software'
+            
+      commandLine:
+          $ref: '#/definitions/CommandLine'
+      monitorizationLog:
+          $ref: '#/definitions/MonitorizationLog'
+        
+        
+#----------LOCATION------------------- 
+  Location:
+    type: object
+    properties:
+      classroom:
+        type: string
+        description: The classroom location
+      plant:
+        type: integer
+        format: int32
+        description: The classroom location
+      trolley:
+        type: string
+        description: The classroom location
+        
+#----------MONITORIZATION-OBJECT------------------- 
+
+  MonitorizationLog:
+    type: object
+    properties:
+      lastRemoteReset:
+        type: string
+        description: The last reset
+      lastCommandsLine:
+        $ref: '#/definitions/CommandLine'
+      lastRemoteWebUri:
+        type: string
+        description: The last web opened Uri
+      lastInstall:
+        $ref: '#/definitions/Software'
+      lastUnistall:
+        $ref: '#/definitions/Software'
+      
+        
+#----------HARDWARE-COMPONENTS-------------------           
+  HardwareComponent:
+    type: object
+    properties:
+      component:
+        type: string
+        description: Computer Component Type,Name,Internal,External...
+      cuantity:
+        type: integer
+        format: int32
+        description: The component cuantity
+        
+  Peripheral:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      isOpen:
+        type: boolean
+        description: Computer Peripheral Component status OPEN,BLOCK
+        
+  ComponentCpu:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      cores:
+        type: integer
+        format: int32
+        description: Component CPU cores
+  
+  ComponentRam:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      capacity:
+        type: integer
+        format: int32
+        description: "Component RAM capacity"
+        
+  ComponentHardDisk:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      diskType:
+        type: string
+        description: The hard disk type HDD,SSD...
+      capacity:
+        type: integer
+        format: int32
+        description: Component HardDisk capacity
+
+#----------SOFTWARE------------------- 
+  Software:
+    type: object
+    properties:
+      application:
+        type: string
+        description: Computer Aplication or Software
+
+#---------COMMAND-EXECUTABLES-CFG-----
+  CommandLine:
+    type: object
+    properties:
+      commands:
+        type: array
+        items:
+          type: string
+          description: The command
+
+#--------COMPUTER-STATUS------------
+  Status:
+    type: object
+    properties:
+      statusInfo:
+        type: string
+        description: The specific status type
+      status:
+        type: boolean
+        description: The status True is done , False not completed
+      error:
+        $ref: '#/definitions/ComputerError'
+        
+#---------ACTIONS--------------------
+  Actions:
+    type: object
+    properties:
+      shutdown:
+        type: boolean
+        description: if the computer need to turn off
+      restart:
+        type: boolean
+        description: if the computer need to restart
+      commands:
+        type: array
+        items:
+          type: string
+      blockDispositives:
+        type: array
+        items:
+          $ref: '#/definitions/Peripheral'
+      openWebs:
+        type: array
+        items:
+          type: string
+      installApps:
+        type: array
+        items:
+          type: string
+      uninstallApps:
+        type: array
+        items:
+          type: string
+      configurationWifi:
+        type: string
+        description: if we need any wifi configuration no file
+      updateAndaluciaId:
+        type: string
+        description: The andalucia ID to update
+      updateSerialNumber:
+        type: string
+        description: The serial number ID to update
+      updateComputerNumber:
+        type: string
+        description: The computer number ID to update
+      
+#----------ERRORS-------------------      
+  ComputerError:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: The error code
+      text:
+        type: string
+        description: the error text body
+  

@@ -1,0 +1,625 @@
+swagger: '2.0'
+host: iesjandula.es
+basePath: /computers
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+info:
+  version: 1.0.0
+  title: IES Jándula Reaktor Website
+  description: This is the Reaktor swagger API
+  contact:
+    name: David Martinez Flores
+    email: dmarflo526@g.educaand.es
+    url: https://www.iesjandula.es/drupal/
+paths:
+#--------------------------ADMINISTRATION-ENDEPOINTS-----------------------------------------------
+#--------------------------ENDPOINT---------------------------------------------------------------
+  /admin/commandLine:
+    #-- OPEN-WEBS ---BY COMMANDLINE-CODE --
+    post:
+      operationId: postComputerCommandLine
+      description: Use the commandLine for commands , open webs
+      consumes:
+       - application/json
+      parameters:
+      - name: serialNumber
+        required: false
+        type: string
+        in: header
+        description: The computer s / n
+        
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+      
+      - name: commandLineInstance
+        in: body
+        required: true
+        schema:
+            type: array
+            items:
+              $ref: '#/definitions/CommandLine'
+      
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+#--------------------------ENDPOINT---------------------------------------------------------------
+  /admin/shutdown:
+    #-----Post--------    
+    #-- PUT OFF-- COMPUTERS --
+    post:
+      operationId: putComputerShutdown
+      description: Used for put off computers
+      parameters:
+      - name: serialNumber
+        required: false
+        type: string
+        in: header
+        description: The computer s / n
+        
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+#--------------------------ENDPOINT---------------------------------------------------------------
+  /admin/restart:
+    #-----Post--------    
+    #-- RESTART-- COMPUTERS --
+    post:
+      operationId: putComputerRestart
+      description: Used for restart computers
+      parameters:
+      - name: serialNumber
+        required: false
+        type: string
+        in: header
+        description: The computer s / n
+        
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError' 
+  /admin/peripheral:
+    #---POST------
+    #---SEND CFG TO PERIPHERALS-----
+    post:
+      operationId: postPeripheral
+      description: Send the peripheral status by classroom or trolley
+      consumes:
+       - application/json
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+      
+      - name: peripheralInstance
+        in: body
+        required: true
+        schema:
+            type: array
+            items:
+              $ref: '#/definitions/Peripheral'
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+  /computer/admin/screenshot:
+    #---POST------
+    #---SEND SCREENSHOT ORDER----
+    post:
+      operationId: sendScreenshotOrder
+      description: Send the order to take screenshot from computer by classroom , trolley
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        #---POST------
+        
+    #---GET SCREENSHOTS----
+    get:
+      operationId: getScreenshots
+      description: Get all screenshots from computers on a zip file
+      produces:
+        - application/zip
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+      responses:
+        200:
+          description: OK
+          schema:
+            type: file
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+  
+  
+  /admin/file:        
+    #-----Post--------
+    #-----SEND , CFG FILE , EXECUTABLES ----
+    post:
+      operationId: postComputerExecFile
+      description: Send a CFG file , executable or any file type to computers by serialNumber, classroom, trolley, plant
+      consumes:
+        - multipart/form-data
+      parameters:
+      - name: serialNumber
+        required: false
+        type: string
+        in: header
+        description: The computer s / n
+        
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+        
+      - name: execFile
+        type: file
+        required: true
+        in: formData
+        description: The file exec cfg...
+        
+      responses:
+        200:
+          description: Computer update success
+        404:
+          description: Computer update falied  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+#--------------------------ENDPOINT---------------------------------------------------------------                
+  /admin/software:        
+    #-----Post--------
+    #-----INSTALL ANY SOFTWARE ON CLASSROOM ,TROLLEY, PROFESSOR ---
+    post:
+      operationId: sendSoftware
+      description: Send any software to install on computers by classroom, trolley, professor
+      consumes:
+       - application/json
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+    
+      - name: professor
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: softwareInstance
+        in: body
+        required: true
+        description: The file exec cfg...
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Software'
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Software error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+    #-----Delete--------
+    #-----UNINSTALL ANY SOFTWARE ON CLASSROOM ,TROLLEY, PROFESSOR ---
+    delete:
+      operationId: unistallSoftware
+      description: Send any software to unistall from computers by classroom, trolley, professor
+      consumes:
+       - application/json
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+    
+      - name: professor
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: softwareInstance
+        in: body
+        required: true
+        description: The file exec cfg...
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/Software'
+        
+      responses:
+        200:
+          description: OK
+        404:
+          description: Software error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+#--------------------------ENDPOINT---------------------------------------------------------------                
+  /computer/edit:
+    #-----Post--------    
+    #------UPDATE A COMPUTER BY ANY OF THE IDS-------
+    put:
+      operationId: updateComputer
+      description: Edit any computer by serialNumber , andaluciaId , computerNumber
+      consumes:
+       - application/json
+      parameters:
+       - name: serialNumber
+         required: false
+         type: string
+         in: header
+         description: The computer identifier S/N
+        
+       - name: andaluciaId
+         required: false
+         type: string
+         in: header
+         description: The computer Andalucia id
+        
+       - name: computerNumber
+         required: false
+         type: string
+         in: header
+         description: The computer identifier number
+      
+       - name: computerInstance
+         in: body
+         required: true
+         schema:
+            $ref: '#/definitions/Computer'
+      
+      responses:
+        200:
+          description: OK
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+            
+#------------------------------OBJECTS DEFINITIONS-----------------------------
+definitions:
+#----------COMPUTER-------------------
+  Computer:
+    type: object
+    properties:
+      serialNumber:
+        type: string
+        description: The computer identifier S/N
+        
+      andaluciaId:
+        type: string
+        description: The computer Andalucia id
+        
+      computerNumber:
+        type: string
+        description: The computer identifier number
+        
+      operativeSystem:
+        type: string
+        description: The computer S.O
+      
+      professor:
+        type: string
+        description: The professor
+      
+      location:
+        $ref: '#/definitions/Location'
+      
+      hardwareList:
+        type: array
+        description: The hardware components and peripherals
+        items: 
+            $ref: '#/definitions/HardwareComponent'
+              
+      softwareList:
+        type: array
+        items: 
+            $ref: '#/definitions/Software'
+            
+      commandLine:
+          $ref: '#/definitions/CommandLine'
+      monitorizationLog:
+          $ref: '#/definitions/MonitorizationLog'
+        
+        
+#----------LOCATION------------------- 
+  Location:
+    type: object
+    properties:
+      classroom:
+        type: string
+        description: The classroom location
+      plant:
+        type: integer
+        format: int32
+        description: The classroom location
+      trolley:
+        type: string
+        description: The classroom location
+        
+#----------MONITORIZATION-OBJECT------------------- 
+
+  MonitorizationLog:
+    type: object
+    properties:
+      lastRemoteReset:
+        type: string
+        description: The last reset
+      lastCommandsLine:
+        $ref: '#/definitions/CommandLine'
+      lastRemoteWebUri:
+        type: string
+        description: The last web opened Uri
+      lastInstall:
+        $ref: '#/definitions/Software'
+      lastUnistall:
+        $ref: '#/definitions/Software'
+      
+        
+#----------HARDWARE-COMPONENTS-------------------           
+  HardwareComponent:
+    type: object
+    properties:
+      component:
+        type: string
+        description: Computer Component Type,Name,Internal,External...
+      cuantity:
+        type: integer
+        format: int32
+        description: The component cuantity
+        
+  Peripheral:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      isOpen:
+        type: boolean
+        description: Computer Peripheral Component status OPEN,BLOCK
+        
+  ComponentCpu:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      cores:
+        type: integer
+        format: int32
+        description: Component CPU cores
+  
+  ComponentRam:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      capacity:
+        type: integer
+        format: int32
+        description: Component RAM capacity
+        
+  ComponentHardDisk:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      diskType:
+        type: string
+        description: The hard disk type HDD,SSD...
+      capacity:
+        type: integer
+        format: int32
+        description: Component HardDisk capacity
+
+#----------SOFTWARE------------------- 
+  Software:
+    type: object
+    properties:
+      application:
+        type: string
+        description: Computer Aplication or Software
+
+#---------COMMAND-EXECUTABLES-CFG-----
+  CommandLine:
+    type: object
+    properties:
+      commands:
+        type: array
+        items:
+          type: string
+          description: The command
+
+#----------ERRORS-------------------      
+  ComputerError:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: The error code
+      text:
+        type: string
+        description: the error text body
+  
+ 
+        

@@ -1,0 +1,311 @@
+swagger: '2.0'
+host: iesjandula.es
+basePath: /computers
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+info:
+  version: 1.0.0
+  title: IES Jándula Reaktor Website
+  description: This is the Reaktor swagger API
+  contact:
+    name: David Martinez Flores
+    email: dmarflo526@g.educaand.es
+    url: https://www.iesjandula.es/drupal/
+paths:
+#--------------------------WEB-ENDEPOINTS-----------------------------------------------
+#--------------------------ENDPOINT---------------------------------------------------------------   
+  /web:
+    #-----Post--------
+    #----GETING THE COMPUTERS BY ANY OF THE IDENTIFIERS OR LOCATIONS---
+    post:
+      operationId: getComputersByAny
+      description: Get any computer by serialNumber, andaluciaId, computerNumber, clasroom , trolley , plant , professor, any type of HardwareComponent or empty to get all computers.
+      parameters:
+      - name: serialNumber
+        required: false
+        type: string
+        in: header
+        description: The computer identifier S/N
+        
+      - name: andaluciaId
+        required: false
+        type: string
+        in: header
+        description: The computer Andalucia id
+        
+      - name: computerNumber
+        required: false
+        type: string
+        in: header
+        description: The computer identifier number
+        
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+        
+      - name: professor
+        required: false
+        type: string
+        in: header
+        description: The professor
+      
+      - name: hardwareList
+        required: false
+        in: body
+        schema:
+          type: array
+          items:
+            $ref: '#/definitions/HardwareComponent'
+            
+      responses:
+        200:
+          description: OK
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/Computer'
+              
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+  /web/screenshot:
+    #-----Post--------    
+    #----GETING THE COMPUTERS SCREENS BY CLASSROOM TROLLEY PLANT OR PROFESSOR---
+    get:
+      operationId: getComputersScreens
+      description: Download all screenshots on a zip file by classroom, trolley, plant, professor 
+      produces:
+        - application/zip
+      parameters:
+      - name: classroom
+        required: false
+        type: string
+        in: header
+        description: The classroom
+        
+      - name: trolley
+        required: false
+        type: string
+        in: header
+        description: The trolley
+        
+      - name: plant
+        required: false
+        type: integer
+        format : int32
+        in: header
+        description: The plant
+        
+      - name: professor
+        required: false
+        type: string
+        in: header
+        description: The professor
+      responses:
+        200:
+          description: OK
+          schema:
+            type: file
+              
+        404:
+          description: Administration error
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+        500:
+          description: Server Error  
+          schema:
+            $ref: '#/definitions/ComputerError'
+            
+definitions:
+#----------COMPUTER-------------------
+  Computer:
+    type: object
+    properties:
+      serialNumber:
+        type: string
+        description: The computer identifier S/N
+        
+      andaluciaId:
+        type: string
+        description: The computer Andalucia id
+        
+      computerNumber:
+        type: string
+        description: The computer identifier number
+        
+      operativeSystem:
+        type: string
+        description: The computer S.O
+      
+      professor:
+        type: string
+        description: The professor
+      
+      location:
+        $ref: '#/definitions/Location'
+      
+      hardwareList:
+        type: array
+        description: The hardware components and peripherals
+        items: 
+            $ref: '#/definitions/HardwareComponent'
+              
+      softwareList:
+        type: array
+        items: 
+            $ref: '#/definitions/Software'
+            
+      commandLine:
+          $ref: '#/definitions/CommandLine'
+      monitorizationLog:
+          $ref: '#/definitions/MonitorizationLog'
+        
+        
+#----------LOCATION------------------- 
+  Location:
+    type: object
+    properties:
+      classroom:
+        type: string
+        description: The classroom location
+      plant:
+        type: integer
+        format: int32
+        description: The classroom location
+      trolley:
+        type: string
+        description: The classroom location
+        
+#----------MONITORIZATION-OBJECT------------------- 
+
+  MonitorizationLog:
+    type: object
+    properties:
+      lastRemoteReset:
+        type: string
+        description: The last reset
+      lastCommandsLine:
+        $ref: '#/definitions/CommandLine'
+      lastRemoteWebUri:
+        type: string
+        description: The last web opened Uri
+      lastInstall:
+        $ref: '#/definitions/Software'
+      lastUnistall:
+        $ref: '#/definitions/Software'
+      
+        
+#----------HARDWARE-COMPONENTS-------------------           
+  HardwareComponent:
+    type: object
+    properties:
+      component:
+        type: string
+        description: Computer Component Type,Name,Internal,External...
+      cuantity:
+        type: integer
+        format: int32
+        description: The component cuantity
+        
+  Peripheral:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      isOpen:
+        type: boolean
+        description: Computer Peripheral Component status OPEN,BLOCK
+        
+  ComponentCpu:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      cores:
+        type: integer
+        format: int32
+        description: Component CPU cores
+  
+  ComponentRam:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      capacity:
+        type: integer
+        format: int32
+        description: Component RAM capacity
+        
+  ComponentHardDisk:
+    allOf:
+      - $ref: '#/definitions/HardwareComponent'
+      - type: object
+    properties:
+      diskType:
+        type: string
+        description: The hard disk type HDD,SSD...
+      capacity:
+        type: integer
+        format: int32
+        description: Component HardDisk capacity
+
+#----------SOFTWARE------------------- 
+  Software:
+    type: object
+    properties:
+      application:
+        type: string
+        description: Computer Aplication or Software
+
+#---------COMMAND-EXECUTABLES-CFG-----
+  CommandLine:
+    type: object
+    properties:
+      commands:
+        type: array
+        items:
+          type: string
+          description: The command
+
+#----------ERRORS-------------------      
+  ComputerError:
+    type: object
+    properties:
+      code:
+        type: integer
+        format: int32
+        description: The error code
+      text:
+        type: string
+        description: the error text body
+  
+  
+
+        
+        
