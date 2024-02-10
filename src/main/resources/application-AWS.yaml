@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: default
   jpa.hibernate.ddl-auto: create
   datasource:
     url: jdbc:mysql://localhost:3306/reaktor
@@ -10,8 +8,16 @@ spring:
       connection-timeout: 60000
       maximum-pool-size: 5
 server:
-  port: 8084
-
+  port: 80
+logging:
+    pattern.console: false
+    level:
+        root: WARN
+    file:
+        name: /tmp/archivo.log
+        max-size: 1MB
+        max-history: 10
+        total-size-cap: 10MB
 reaktor:
   cronComputerOn: 5_000
   cronComputerOnDifference: 7_000
