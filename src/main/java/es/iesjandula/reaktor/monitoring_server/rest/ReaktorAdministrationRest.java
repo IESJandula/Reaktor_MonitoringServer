@@ -133,12 +133,12 @@ public class ReaktorAdministrationRest
 					this.commandsToComputerByClassroom(classroom, commands);
 					methodsUsed += "classroom,";
 				}
-				if (plant != null)
-				{
-					// ALL COMMANDS ON SPECIFIC COMPUTER BY plant
-					this.commandsToComputerByPlant(plant, commands);
-					methodsUsed += "plant,";
-				}
+//				if (plant != null)
+//				{
+//					// ALL COMMANDS ON SPECIFIC COMPUTER BY plant
+//					this.commandsToComputerByPlant(plant, commands);
+//					methodsUsed += "plant,";
+//				}
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok(this.computerListToMap());
@@ -960,12 +960,41 @@ public class ReaktorAdministrationRest
 	 */
 	private void commandsToAllComputers(List<String> commands)
 	{
-		for (int i = 0; i < this.computerList.size(); i++)
+		// -- GETTING THE MOTHERBOARD ---
+		List<Motherboard> motherboardIdList =  this.iMotherboardRepository.findAll();
+		for(Motherboard motherboard : motherboardIdList) 
 		{
-			Computer computer = this.computerList.get(i);
-			computer.setCommandLine(new CommandLine(commands));
-			this.computerList.remove(computer);
-			this.computerList.add(i, computer);
+			// -- GET THE ACTION ---
+			Optional<Action> actionId = this.iActionRepository.findById("commandLine");
+			
+			if(actionId.isPresent())
+			{
+				Action action = actionId.get();
+				// --- ACTION EXISTS ---
+				
+				// --- NEW TASK TO DO ---
+				Task task = new Task();
+				TaskId taskId = new TaskId();
+				
+				taskId.setActionName(action.getName());
+				taskId.setDate(new Date());
+				taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+				
+				task.setTaskId(taskId);
+				task.setAction(action);
+				task.setMotherboard(motherboard);
+				if(!commands.isEmpty()) 
+				{
+					task.setInfo(commands.get(0));
+				}
+				else 
+				{
+					task.setInfo("");
+				}
+				task.setStatus("TO DO");
+				
+				this.iTaskRepository.saveAndFlush(task);
+			}
 		}
 	}
 
@@ -997,14 +1026,43 @@ public class ReaktorAdministrationRest
 	 */
 	private void commandsToComputerByClassroom(String classroom, List<String> commands)
 	{
-		for (int i = 0; i < this.computerList.size(); i++)
+		// -- GETTING THE MOTHERBOARD ---
+		List<Motherboard> motherboardList =  this.iMotherboardRepository.findByClassroom(classroom);
+		
+		for(Motherboard motherboard : motherboardList) 
 		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
+			// --- FOR MOTHERBOARD ---
+			
+			// -- GET THE ACTION ---
+			Optional<Action> actionId = this.iActionRepository.findById("commandLine");
+			
+			if(actionId.isPresent())
 			{
-				computer.setCommandLine(new CommandLine(commands));
-				this.computerList.remove(computer);
-				this.computerList.add(i, computer);
+				Action action = actionId.get();
+				// --- ACTION EXISTS ---
+				
+				// --- NEW TASK TO DO ---
+				Task task = new Task();
+				TaskId taskId = new TaskId();
+				
+				taskId.setActionName(action.getName());
+				taskId.setDate(new Date());
+				taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+				
+				task.setTaskId(taskId);
+				task.setAction(action);
+				task.setMotherboard(motherboard);
+				if(!commands.isEmpty()) 
+				{
+					task.setInfo(commands.get(0));
+				}
+				else 
+				{
+					task.setInfo("");
+				}
+				task.setStatus("TO DO");
+				
+				this.iTaskRepository.saveAndFlush(task);
 			}
 		}
 	}
@@ -1017,16 +1075,45 @@ public class ReaktorAdministrationRest
 	 */
 	private void commandsToComputerByTrolley(String trolley, List<String> commands)
 	{
-		for (int i = 0; i < this.computerList.size(); i++)
+		// -- GETTING THE MOTHERBOARD ---
+		List<Motherboard> motherboardList =  this.iMotherboardRepository.findByTrolley(trolley);
+		
+		for(Motherboard motherboard : motherboardList) 
 		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
+			// --- FOR MOTHERBOARD ---
+			
+			// -- GET THE ACTION ---
+			Optional<Action> actionId = this.iActionRepository.findById("commandLine");
+			
+			if(actionId.isPresent())
 			{
-				computer.setCommandLine(new CommandLine(commands));
-				this.computerList.remove(computer);
-				this.computerList.add(i, computer);
+				Action action = actionId.get();
+				// --- ACTION EXISTS ---
+				
+				// --- NEW TASK TO DO ---
+				Task task = new Task();
+				TaskId taskId = new TaskId();
+				
+				taskId.setActionName(action.getName());
+				taskId.setDate(new Date());
+				taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+				
+				task.setTaskId(taskId);
+				task.setAction(action);
+				task.setMotherboard(motherboard);
+				if(!commands.isEmpty()) 
+				{
+					task.setInfo(commands.get(0));
+				}
+				else 
+				{
+					task.setInfo("");
+				}
+				task.setStatus("TO DO");
+				
+				this.iTaskRepository.saveAndFlush(task);
 			}
-		}
+		}	
 	}
 
 	/**
@@ -1038,15 +1125,45 @@ public class ReaktorAdministrationRest
 	 */
 	private void commandsToComputerBySerialNumber(String serialNumber, List<String> commands)
 	{
-		for (int i = 0; i < this.computerList.size(); i++)
+		// -- GETTING THE MOTHERBOARD ---
+		Optional<Motherboard> motherboardId =  this.iMotherboardRepository.findById(serialNumber);
+		if(motherboardId.isPresent()) 
 		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
+			Motherboard motherboard = motherboardId.get();
+			// --- MOTHERBOARD EXISTS ---
+			
+			// -- GET THE ACTION ---
+			Optional<Action> actionId = this.iActionRepository.findById("commandLine");
+			
+			if(actionId.isPresent())
 			{
-				computer.setCommandLine(new CommandLine(commands));
-				this.computerList.remove(computer);
-				this.computerList.add(i, computer);
+				Action action = actionId.get();
+				// --- ACTION EXISTS ---
+				
+				// --- NEW TASK TO DO ---
+				Task task = new Task();
+				TaskId taskId = new TaskId();
+				
+				taskId.setActionName(action.getName());
+				taskId.setDate(new Date());
+				taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+				
+				task.setTaskId(taskId);
+				task.setAction(action);
+				task.setMotherboard(motherboard);
+				if(!commands.isEmpty()) 
+				{
+					task.setInfo(commands.get(0));
+				}
+				else 
+				{
+					task.setInfo("");
+				}
+				task.setStatus("TO DO");
+				
+				this.iTaskRepository.saveAndFlush(task);
 			}
+			
 		}
 	}
 
