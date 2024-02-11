@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -25,6 +27,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MultipartFile;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
+import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.HardwareComponent;
@@ -33,6 +36,10 @@ import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
+import es.iesjandula.reaktor.models.Task;
+import es.iesjandula.reaktor.models.Id.TaskId;
+import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
@@ -63,6 +70,12 @@ public class ReaktorAdministrationRest
 	
 	@Autowired
 	private ITaskRepository iTaskRepository;
+	
+	@Autowired
+	private IMotherboardRepository iMotherboardRepository;
+	
+	@Autowired
+	private IActionRepository iActionRepository;
 
 	/**
 	 * Method sendInformation to send information of commands to computers
@@ -182,40 +195,48 @@ public class ReaktorAdministrationRest
 				if (serialNumber != null)
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY serialNumber
-					this.addBySerialNumber(serialNumber, shutdownComputerListDistint);
-					for (Motherboard motherboard : shutdownList)
-					{
-						
-					}
+					this.addBySerialNumber(serialNumber, shutdownList);
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY trolley
-					this.addByTrolley(trolley, shutdownComputerListDistint);
-					
+					this.addByTrolley(trolley, shutdownList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY classroom
-					this.addByClassroom(classroom, shutdownComputerListDistint);
+					this.addByClassroom(classroom, shutdownList);
 					methodsUsed += "classroom,";
 				}
-				if (plant != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY plant
-					this.addByPlant(plant, shutdownComputerListDistint);
-					methodsUsed += "plant,";
-				}
+//				if (plant != null)
+//				{
+//					// SHUTDOWN SPECIFIC COMPUTER BY plant
+//					this.addByPlant(plant, shutdownComputerListDistint);
+//					methodsUsed += "plant,";
+//				}
 				log.info("Parameters Used: " + methodsUsed);
+				
+				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(shutdownList, actionId.get());
+				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
 			}
 			else
 			{
 				// SHUTDOWN ALL COMPUTERS
-				this.addByAll(shutdownComputerListDistint);
+				this.addByAll(shutdownList);
+				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(shutdownList, actionId.get());
+				}
 				log.info("By all Computers");
 				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
 			}
@@ -227,6 +248,29 @@ public class ReaktorAdministrationRest
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
+	
+	private void addTasks(Set<Motherboard> motherboardList, Action action)
+	{
+		Date date = new Date();
+		for (Motherboard motherboard : motherboardList)
+		{
+			Task task = new Task();
+			TaskId taskId = new TaskId();
+			
+			taskId.setActionName(action.getName());
+			taskId.setDate(date);
+			taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+			
+			task.setTaskId(taskId);
+			task.setAction(action);
+			task.setMotherboard(motherboard);
+			task.setInfo("");
+			task.setStatus("TO DO");
+			
+			this.iTaskRepository.saveAndFlush(task);
+		}
+	}
+	
 
 	/**
 	 * Method shutdownComputers
@@ -1055,12 +1099,10 @@ public class ReaktorAdministrationRest
 	 * 
 	 * @param computerListDistint
 	 */
-	private void addByAll(Set<Computer> computerListDistint)
+	private void addByAll(Set<Motherboard> pipiList)
 	{
-		for (Computer computer : this.computerList)
-		{
-			computerListDistint.add(computer);
-		}
+		List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
+		pipiList.addAll(motherboardList);
 	}
 
 	/**
@@ -1086,15 +1128,10 @@ public class ReaktorAdministrationRest
 	 * @param classroom
 	 * @param computerListDistint
 	 */
-	private void addByClassroom(String classroom, Set<Computer> computerListDistint)
+	private void addByClassroom(String classroom, Set<Motherboard> pipiList)
 	{
-		for (Computer computer : this.computerList)
-		{
-			if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
-			{
-				computerListDistint.add(computer);
-			}
-		}
+		List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
+		pipiList.addAll(motherboardList);
 	}
 
 	/**
@@ -1103,15 +1140,10 @@ public class ReaktorAdministrationRest
 	 * @param trolley
 	 * @param computerListDistint
 	 */
-	private void addByTrolley(String trolley, Set<Computer> computerListDistint)
+	private void addByTrolley(String trolley, Set<Motherboard> pipiList)
 	{
-		for (Computer computer : this.computerList)
-		{
-			if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
-			{
-				computerListDistint.add(computer);
-			}
-		}
+		List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
+		pipiList.addAll(motherboardList);
 	}
 
 	/**
@@ -1120,14 +1152,12 @@ public class ReaktorAdministrationRest
 	 * @param serialNumber
 	 * @param computerListDistint
 	 */
-	private void addBySerialNumber(String serialNumber, Set<Computer> computerListDistint)
+	private void addBySerialNumber(String serialNumber, Set<Motherboard> pipiList)
 	{
-		for (Computer computer : this.computerList)
+		Optional<Motherboard> motherboardId =  this.iMotherboardRepository.findById(serialNumber);
+		if(motherboardId.isPresent()) 
 		{
-			if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
-			{
-				computerListDistint.add(computer);
-			}
+			pipiList.add(motherboardId.get());
 		}
 	}
 
