@@ -61,23 +61,121 @@ public class FindMotherboard
 	/**
 	 * Metodo que busca una o varias placas bases que se encuentran en una clase
 	 * @param classroom
-	 * @return 
+	 * @return lista de placas bases encontradas o null si no ha encontrado nada
 	 */
 	public List<MotherBoard> findByClassroom(String classroom)
 	{
 		List<MotherBoard> motherBoards = this.motherBoardRepo.findAll();
 		List<MotherBoard> otherList = new LinkedList<MotherBoard>();
-		
+		//Primer for sobre los ordenadors
 		for(Computer c:this.computers)
 		{
-			String serialNumber = c.getSerialNumber();
-			for(MotherBoard m:motherBoards)
+			String serialNumber = "";
+			//Obtenemos y comparamos el serial number en otro for
+			if(c.getLocation().getClassroom().equals(classroom))
 			{
-				if(m.getSerialNumber().equals(serialNumber))
+				serialNumber = c.getSerialNumber();
+			}
+			if(!serialNumber.isEmpty())
+			{
+				for(MotherBoard m:motherBoards)
 				{
-					otherList.add(m);
+					if(m.getSerialNumber().equals(serialNumber))
+					{
+						otherList.add(m);
+					}
 				}
 			}
+			
+		}
+		
+		return otherList;
+	}
+	/**
+	 * Este metodo devuelve una lista de palacas base por su carrito
+	 * @param trolley
+	 * @return List<MotherBoard>
+	 */
+	
+	public List<MotherBoard> findByTrolley(String trolley){
+	    List<MotherBoard> motherBoards = this.motherBoardRepo.findAll();
+	    List<MotherBoard> otherList = new LinkedList<MotherBoard>();
+
+	        for (Computer c : this.computers)
+	        {
+	            if (trolley.equals(c.getLocation().getTrolley()))
+	            {
+	                String serialNumber = c.getSerialNumber();
+	                for (MotherBoard m : motherBoards)
+	                {
+	                    if (m.getSerialNumber().equals(serialNumber))
+	                    {
+	                        otherList.add(m);
+	                    }
+	                }
+	            }
+	        }
+
+	        return otherList;
+	    }
+	
+	/**  
+     * Este metodo devuelve una lista de palacas base por su profesor
+	 * @param trolley
+	 * @return List<MotherBoard>
+	 */
+	
+	public List<MotherBoard> findByProfesor(String professor){
+	    List<MotherBoard> motherBoards = this.motherBoardRepo.findAll();
+	    List<MotherBoard> otherList = new LinkedList<MotherBoard>();
+
+	        for (Computer c : this.computers)
+	        {
+	            if (professor.equals(c.getProfessor()))
+	            {
+	                String serialNumber = c.getSerialNumber();
+	                for (MotherBoard m : motherBoards)
+	                {
+	                    if (m.getSerialNumber().equals(serialNumber))
+	                    {
+	                        otherList.add(m);
+	                    }
+	                }
+	            }
+	        }
+
+	        return otherList;
+	    }
+
+	/**
+	 * Metodo que busca una o varias placas bases que se encuentran en una planta
+	 * @param classroom
+	 * @return lista de placas bases encontradas o null si no ha encontrado nada
+	 */
+	public List<MotherBoard> findByPlant(Integer plant)
+	{
+		List<MotherBoard> motherBoards = this.motherBoardRepo.findAll();
+		List<MotherBoard> otherList = new LinkedList<MotherBoard>();
+		//Primer for sobre los ordenadors
+		for(Computer c:this.computers)
+		{
+			String serialNumber = "";
+			//Obtenemos y comparamos el serial number en otro for
+			if(c.getLocation().getPlant()==plant)
+			{
+				serialNumber = c.getSerialNumber();
+			}
+			if(!serialNumber.isEmpty())
+			{
+				for(MotherBoard m:motherBoards)
+				{
+					if(m.getSerialNumber().equals(serialNumber))
+					{
+						otherList.add(m);
+					}
+				}
+			}
+			
 		}
 		
 		return otherList;
