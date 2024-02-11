@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,12 +31,10 @@ import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.HardwareComponent;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Motherboard;
-import es.iesjandula.reaktor.models.Peripheral;
-import es.iesjandula.reaktor.models.Software;
+import es.iesjandula.reaktor.models.Reaktor;
 import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.Usb;
 import es.iesjandula.reaktor.models.Id.TaskId;
@@ -71,12 +68,21 @@ public class ReaktorAdministrationRest
 
 	));
 	
+	/**
+	 * Attribute iTaskRepository
+	 */
 	@Autowired
 	private ITaskRepository iTaskRepository;
 	
+	/**
+	 * Attribute iMotherboardRepository
+	 */
 	@Autowired
 	private IMotherboardRepository iMotherboardRepository;
 	
+	/**
+	 * Attribute iActionRepository
+	 */
 	@Autowired
 	private IActionRepository iActionRepository;
 
@@ -250,33 +256,6 @@ public class ReaktorAdministrationRest
 		}
 	}
 	
-	/**
-	 * Method addTasks
-	 * @param motherboardList
-	 * @param action
-	 */
-	private void addTasks(Set<Motherboard> motherboardList, Action action,String info)
-	{
-		Date date = new Date();
-		for (Motherboard motherboard : motherboardList)
-		{
-			Task task = new Task();
-			TaskId taskId = new TaskId();
-			
-			taskId.setActionName(action.getName());
-			taskId.setDate(date);
-			taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
-			
-			task.setTaskId(taskId);
-			task.setAction(action);
-			task.setMotherboard(motherboard);
-			task.setInfo(info);
-			task.setStatus("TO DO");
-			
-			this.iTaskRepository.saveAndFlush(task);
-		}
-	}
-	
 
 	/**
 	 * Method shutdownComputers
@@ -380,6 +359,7 @@ public class ReaktorAdministrationRest
 		try
 		{
 
+			Set<Motherboard> motherboardList = new HashSet<Motherboard>();
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((classroom != null) || (trolley != null))
 			{
@@ -395,29 +375,27 @@ public class ReaktorAdministrationRest
 
 				if (trolley != null)
 				{
-					List<Motherboard> motherboardList =  this.iMotherboardRepository.findByTrolley(trolley);
-					
-					
-					
+					List<Motherboard> list =  this.iMotherboardRepository.findByTrolley(trolley);
+					motherboardList.addAll(list);
+					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
 					// ON SPECIFIC COMPUTER BY classroom
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
-						{
-							List<HardwareComponent> hardwareComponentList = this
-									.getHardwarePeripheralListEdited(peripheralInstance, computer);
-							computer.setHardwareList(hardwareComponentList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> list =  this.iMotherboardRepository.findByClassroom(classroom);
+					motherboardList.addAll(list);
 					methodsUsed += "classroom,";
 				}
-
+				
+				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
+				
+				if(action.isPresent()) 
+				{
+					this.addTasks(motherboardList, action.get(), usb.getId().toString());
+				}
+				
+				
+				
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok(this.computerListToMap());
@@ -425,17 +403,16 @@ public class ReaktorAdministrationRest
 			else
 			{
 				// ON ALL COMPUTERS
-				for (int i = 0; i < this.computerList.size(); i++)
+				List<Motherboard> list =  this.iMotherboardRepository.findAll();
+				motherboardList.addAll(list);
+				
+				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
+				
+				if(action.isPresent()) 
 				{
-					Computer computer = this.computerList.get(i);
-					this.computerList.remove(computer);
-
-					List<HardwareComponent> hardwareComponentList = this
-							.getHardwarePeripheralListEdited(peripheralInstance, computer);
-					computer.setHardwareList(hardwareComponentList);
-
-					this.computerList.add(i, computer);
+					this.addTasks(motherboardList, action.get(), usb.getId().toString());
 				}
+				
 				log.info("By all Computers");
 				return ResponseEntity.ok(this.computerListToMap());
 			}
@@ -703,7 +680,7 @@ public class ReaktorAdministrationRest
 			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String andaluciaId,
 			@RequestHeader(required = false) String computerNumber,
-			@RequestBody(required = true) Computer computerInstance)
+			@RequestBody(required = true) Reaktor reaktorInstance)
 	{
 		try
 		{
@@ -723,44 +700,33 @@ public class ReaktorAdministrationRest
 				if (serialNumber != null)
 				{
 					// ON SPECIFIC COMPUTER BY serialNumber
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
-						{
-							this.computerList.remove(computer);
-						}
-					}
-					this.computerList.add(computerInstance);
+					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumber);
+					
+					this.updateMotherboard(reaktorInstance, motherboard);
 
 					methodsUsed += "serialNumber,";
 				}
 				if (andaluciaId != null)
 				{
 					// ON SPECIFIC COMPUTER BY trolley
-					for (int i = 0; i < this.computerList.size(); i++)
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByAndaluciaId(andaluciaId);
+					
+					for(Motherboard motherboard:motherboardList) 
 					{
-						Computer computer = this.computerList.get(i);
-						if (computer.getAndaluciaID().equalsIgnoreCase(andaluciaId))
-						{
-							this.computerList.remove(computer);
-						}
+						this.updateMotherboard(reaktorInstance, motherboard);
 					}
-					this.computerList.add(computerInstance);
+					
 					methodsUsed += "trolley,";
 				}
 				if (computerNumber != null)
 				{
 					// ON SPECIFIC COMPUTER BY classroom
-					for (int i = 0; i < this.computerList.size(); i++)
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByComputerNumber(computerNumber);
+					
+					for(Motherboard motherboard:motherboardList) 
 					{
-						Computer computer = this.computerList.get(i);
-						if (computer.getComputerNumber().equalsIgnoreCase(computerNumber))
-						{
-							this.computerList.remove(computer);
-						}
+						this.updateMotherboard(reaktorInstance, motherboard);
 					}
-					this.computerList.add(computerInstance);
 					methodsUsed += "classroom,";
 				}
 
@@ -782,6 +748,32 @@ public class ReaktorAdministrationRest
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
+	}
+
+	/**
+	 * Method to update Motherboard
+	 * @param reaktorInstance
+	 * @param motherboard
+	 */
+	private void updateMotherboard(Reaktor reaktorInstance, Motherboard motherboard) 
+	{
+		motherboard.setAndaluciaId(reaktorInstance.getMotherboard().getAndaluciaId());
+		motherboard.setClassroom(reaktorInstance.getMotherboard().getClassroom());
+		motherboard.setComputerNumber(reaktorInstance.getMotherboard().getComputerNumber());
+		motherboard.setComputerOn(reaktorInstance.getMotherboard().getComputerOn());
+		motherboard.setComputerSerialNumber(reaktorInstance.getMotherboard().getComputerSerialNumber());
+		motherboard.setIsAdmin(reaktorInstance.getMotherboard().getIsAdmin());
+		motherboard.setLastConnection(reaktorInstance.getMotherboard().getLastConnection());
+		motherboard.setLastUpdateComputerOn(reaktorInstance.getMotherboard().getLastUpdateComputerOn());
+		motherboard.setMalware(reaktorInstance.getMotherboard().getMalware());
+		motherboard.setModel(reaktorInstance.getMotherboard().getModel());
+		motherboard.setMotherBoardSerialNumber(reaktorInstance.getMotherboard().getMotherBoardSerialNumber());
+		motherboard.setTasks(reaktorInstance.getMotherboard().getTasks());
+		motherboard.setTeacher(reaktorInstance.getMotherboard().getTeacher());
+		motherboard.setTrolley(reaktorInstance.getMotherboard().getTrolley());
+		
+		this.iMotherboardRepository.save(motherboard);
+		this.iMotherboardRepository.flush();
 	}
 
 	/**
@@ -1297,6 +1289,11 @@ public class ReaktorAdministrationRest
 
 	}
 	
+	/**
+	 * Method writeText
+	 * @param name
+	 * @param content
+	 */
 	public void writeText(String name, byte[] content)
 	{
 		
@@ -1310,16 +1307,14 @@ public class ReaktorAdministrationRest
 			
 			dataOutputStream = new DataOutputStream(fileOutputStream);
 			
-			
-
 			dataOutputStream.write(content);
 
 			dataOutputStream.flush();
 
-		} catch (IOException e)
+		} catch (IOException exception)
 		{
 			String message = "Error";
-			log.error(message, e);
+			log.error(message, exception);
 		} finally
 		{
 			if (dataOutputStream != null)
@@ -1327,10 +1322,10 @@ public class ReaktorAdministrationRest
 				try
 				{
 					dataOutputStream.close();
-				} catch (IOException e)
+				} catch (IOException exception)
 				{
 					String message = "Error";
-					log.error(message, e);
+					log.error(message, exception);
 				}
 			}
 
@@ -1339,10 +1334,10 @@ public class ReaktorAdministrationRest
 				try
 				{
 					fileOutputStream.close();
-				} catch (IOException e)
+				} catch (IOException exception)
 				{
 					String message = "Error";
-					log.error(message, e);
+					log.error(message, exception);
 				}
 			}
 		}
@@ -1436,5 +1431,32 @@ public class ReaktorAdministrationRest
 			zipOutputStream.closeEntry();
 		}
 		return zipFile;
+	}
+	
+	/**
+	 * Method addTasks
+	 * @param motherboardList
+	 * @param action
+	 */
+	private void addTasks(Set<Motherboard> motherboardList, Action action,String info)
+	{
+		Date date = new Date();
+		for (Motherboard motherboard : motherboardList)
+		{
+			Task task = new Task();
+			TaskId taskId = new TaskId();
+			
+			taskId.setActionName(action.getName());
+			taskId.setDate(date);
+			taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());				
+			
+			task.setTaskId(taskId);
+			task.setAction(action);
+			task.setMotherboard(motherboard);
+			task.setInfo(info);
+			task.setStatus("TO DO");
+			
+			this.iTaskRepository.saveAndFlush(task);
+		}
 	}
 }
