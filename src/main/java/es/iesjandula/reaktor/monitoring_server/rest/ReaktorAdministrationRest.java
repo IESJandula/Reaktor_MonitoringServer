@@ -560,7 +560,7 @@ public class ReaktorAdministrationRest
 				Optional<Action> action =this.iActionRepository.findById("install");
 				if(!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get());
+					this.addTasks(motherboardSet, action.get(), software);
 				}
 				
 				
@@ -578,7 +578,7 @@ public class ReaktorAdministrationRest
 				Optional<Action> action =this.iActionRepository.findById("install");
 				if(!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get());
+					this.addTasks(motherboardSet, action.get(), software);
 				}
 				return ResponseEntity.ok().build();
 			}
@@ -605,7 +605,7 @@ public class ReaktorAdministrationRest
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
 			@RequestHeader(required = false) String professor,
-			@RequestBody(required = true) List<Software> softwareInstance)
+			@RequestBody(required = true) String software)
 	{
 		try
 		{
@@ -647,7 +647,7 @@ public class ReaktorAdministrationRest
 				Optional<Action> action =this.iActionRepository.findById("uninstall");
 				if(!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get());
+					this.addTasks(motherboardSet, action.get(), software);
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
@@ -663,7 +663,7 @@ public class ReaktorAdministrationRest
 				Optional<Action> action =this.iActionRepository.findById("uninstall");
 				if(!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get());
+					this.addTasks(motherboardSet, action.get(), software);
 				}
 				return ResponseEntity.ok().build();
 			}
