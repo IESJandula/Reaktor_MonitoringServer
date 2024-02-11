@@ -165,8 +165,6 @@ public class ReaktorAdministrationRest
 			Set<Computer> shutdownComputerListDistint = new HashSet<>();
 			
 			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
-			
-			Motherboard motherboard = new Motherboard();
 
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
@@ -185,7 +183,10 @@ public class ReaktorAdministrationRest
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY serialNumber
 					this.addBySerialNumber(serialNumber, shutdownComputerListDistint);
-					for()
+					for (Motherboard motherboard : shutdownList)
+					{
+						
+					}
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
