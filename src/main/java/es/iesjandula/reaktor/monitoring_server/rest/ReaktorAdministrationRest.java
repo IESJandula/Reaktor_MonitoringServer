@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,8 +30,10 @@ import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.HardwareComponent;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
+import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
+import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -57,6 +60,9 @@ public class ReaktorAdministrationRest
 					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog())
 
 	));
+	
+	@Autowired
+	private ITaskRepository iTaskRepository;
 
 	/**
 	 * Method sendInformation to send information of commands to computers
@@ -157,6 +163,10 @@ public class ReaktorAdministrationRest
 		try
 		{
 			Set<Computer> shutdownComputerListDistint = new HashSet<>();
+			
+			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
+			
+			Motherboard motherboard = new Motherboard();
 
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
@@ -175,12 +185,14 @@ public class ReaktorAdministrationRest
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY serialNumber
 					this.addBySerialNumber(serialNumber, shutdownComputerListDistint);
+					for()
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
 				{
 					// SHUTDOWN SPECIFIC COMPUTER BY trolley
 					this.addByTrolley(trolley, shutdownComputerListDistint);
+					
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
