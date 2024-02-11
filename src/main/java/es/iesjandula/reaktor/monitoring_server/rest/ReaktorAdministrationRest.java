@@ -1138,10 +1138,10 @@ public class ReaktorAdministrationRest
 	 * 
 	 * @param computerListDistint
 	 */
-	private void addByAll(Set<Motherboard> pipiList)
+	private void addByAll(Set<Motherboard> motherboardList)
 	{
-		List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
-		pipiList.addAll(motherboardList);
+		List<Motherboard> motherboardId = this.iMotherboardRepository.findAll();
+		motherboardList.addAll(motherboardId);
 	}
 
 
@@ -1151,10 +1151,10 @@ public class ReaktorAdministrationRest
 	 * @param classroom
 	 * @param computerListDistint
 	 */
-	private void addByClassroom(String classroom, Set<Motherboard> pipiList)
+	private void addByClassroom(String classroom, Set<Motherboard> motherboardList)
 	{
-		List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
-		pipiList.addAll(motherboardList);
+		List<Motherboard> motherboardId = this.iMotherboardRepository.findByClassroom(classroom);
+		motherboardList.addAll(motherboardId);
 	}
 
 	/**
@@ -1163,10 +1163,10 @@ public class ReaktorAdministrationRest
 	 * @param trolley
 	 * @param computerListDistint
 	 */
-	private void addByTrolley(String trolley, Set<Motherboard> pipiList)
+	private void addByTrolley(String trolley, Set<Motherboard> motherboardList)
 	{
-		List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
-		pipiList.addAll(motherboardList);
+		List<Motherboard> motherboardId = this.iMotherboardRepository.findByTrolley(trolley);
+		motherboardList.addAll(motherboardId);
 	}
 
 	/**
@@ -1175,12 +1175,12 @@ public class ReaktorAdministrationRest
 	 * @param serialNumber
 	 * @param computerListDistint
 	 */
-	private void addBySerialNumber(String serialNumber, Set<Motherboard> pipiList)
+	private void addBySerialNumber(String serialNumber, Set<Motherboard> motherboardList)
 	{
 		Optional<Motherboard> motherboardId =  this.iMotherboardRepository.findById(serialNumber);
 		if(motherboardId.isPresent()) 
 		{
-			pipiList.add(motherboardId.get());
+			motherboardList.add(motherboardId.get());
 		}
 	}
 
