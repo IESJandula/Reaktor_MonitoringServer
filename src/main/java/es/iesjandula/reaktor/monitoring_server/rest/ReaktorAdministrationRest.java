@@ -223,7 +223,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get());
+					this.addTasks(shutdownList, actionId.get(), "");
 				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
@@ -236,7 +236,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get());
+					this.addTasks(shutdownList, actionId.get(), "");
 				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
@@ -296,7 +296,7 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			Set<Computer> restartComputerListDistint = new HashSet<>();
+			Set<Motherboard> restartList = new HashSet<Motherboard>();
 
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
@@ -313,33 +313,46 @@ public class ReaktorAdministrationRest
 
 				if (serialNumber != null)
 				{
-					this.addBySerialNumber(serialNumber, restartComputerListDistint);
+					this.addBySerialNumber(serialNumber, restartList);
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
 				{
-					this.addByTrolley(trolley, restartComputerListDistint);
+					this.addByTrolley(trolley, restartList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
-					this.addByClassroom(classroom, restartComputerListDistint);
+					this.addByClassroom(classroom, restartList);
 					methodsUsed += "classroom,";
 				}
-				if (plant != null)
-				{
-					this.addByPlant(plant, restartComputerListDistint);
-					methodsUsed += "plant,";
-				}
+//				if (plant != null)
+//				{
+//					this.addByPlant(plant, restartComputerListDistint);
+//					methodsUsed += "plant,";
+//				}
 				log.info("Parameters Used: " + methodsUsed);
+				
+				Optional<Action> actionId = this.iActionRepository.findById("restart");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(restartList, actionId.get(), "");
+				}
 				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(restartComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				this.addByAll(restartComputerListDistint);
+				this.addByAll(restartList);
+				Optional<Action> actionId = this.iActionRepository.findById("restart");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(restartList, actionId.get(), "");
+				}
 				log.info("By all Computers");
-				return ResponseEntity.ok(this.restartComputerListDistintToMap(restartComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
@@ -480,7 +493,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(screenshotList, actionId.get());
+					this.addTasks(screenshotList, actionId.get(), "");
 				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
@@ -492,7 +505,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(screenshotList, actionId.get());
+					this.addTasks(screenshotList, actionId.get(), "");
 				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
