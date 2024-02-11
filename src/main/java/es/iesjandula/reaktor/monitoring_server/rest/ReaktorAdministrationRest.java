@@ -523,13 +523,13 @@ public class ReaktorAdministrationRest
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley,
 			@RequestHeader(required = false) String professor,
-			@RequestBody(required = true) List<Software> softwareInstance)
+			@RequestHeader(required = true) String software)
 	{
 		try
 		{
-
+			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((classroom != null) || (trolley != null))
+			if ((classroom != null) || (trolley != null) || (professor != null))
 			{
 				String methodsUsed = "";
 
@@ -542,72 +542,49 @@ public class ReaktorAdministrationRest
 				}
 				if (professor != null)
 				{
-					// ON SPECIFIC COMPUTER BY professor
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getProfessor().equalsIgnoreCase(professor))
-						{
-							List<Software> softwareList = this.getSoftwareListEdited(softwareInstance, computer);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "professor,";
 				}
 				if (trolley != null)
 				{
 					// ON SPECIFIC COMPUTER BY trolley
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
-						{
-							List<Software> softwareList = this.getSoftwareListEdited(softwareInstance, computer);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
 					// ON SPECIFIC COMPUTER BY classroom
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
-						{
-							List<Software> softwareList = this.getSoftwareListEdited(softwareInstance, computer);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "classroom,";
 				}
-
+				
+				Optional<Action> action =this.iActionRepository.findById("install");
+				if(!action.isEmpty())
+				{
+					this.addTasks(motherboardSet, action.get());
+				}
+				
+				
+				
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.computerListToMap());
+				return ResponseEntity.ok().build();
 			}
 			else
 			{
 				// ON ALL COMPUTERS
-				for (int i = 0; i < this.computerList.size(); i++)
-				{
-					Computer computer = this.computerList.get(i);
-					this.computerList.remove(computer);
-
-					List<Software> softwareList = this.getSoftwareListEdited(softwareInstance, computer);
-					computer.setSoftwareList(softwareList);
-
-					this.computerList.add(i, computer);
-				}
+				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
+				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
-				return ResponseEntity.ok(this.computerListToMap());
+				Optional<Action> action =this.iActionRepository.findById("install");
+				if(!action.isEmpty())
+				{
+					this.addTasks(motherboardSet, action.get());
+				}
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
@@ -636,7 +613,7 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-
+			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((classroom != null) || (trolley != null))
 			{
@@ -653,56 +630,28 @@ public class ReaktorAdministrationRest
 				if (professor != null)
 				{
 					// ON SPECIFIC COMPUTER BY professor
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getProfessor().equalsIgnoreCase(professor))
-						{
-							List<Software> softwareList = new ArrayList<>(computer.getSoftwareList());
-
-							this.removeSoftwareFromList(softwareInstance, softwareList);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "professor,";
 				}
 				if (trolley != null)
 				{
 					// ON SPECIFIC COMPUTER BY trolley
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
-						{
-							List<Software> softwareList = new ArrayList<>(computer.getSoftwareList());
-
-							this.removeSoftwareFromList(softwareInstance, softwareList);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
 					// ON SPECIFIC COMPUTER BY classroom
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
-						{
-							List<Software> softwareList = new ArrayList<>(computer.getSoftwareList());
-
-							this.removeSoftwareFromList(softwareInstance, softwareList);
-							computer.setSoftwareList(softwareList);
-						}
-						this.computerList.add(i, computer);
-					}
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
+					motherboardSet.addAll(motherboardList);
 					methodsUsed += "classroom,";
+				}
+				Optional<Action> action =this.iActionRepository.findById("uninstall");
+				if(!action.isEmpty())
+				{
+					this.addTasks(motherboardSet, action.get());
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
@@ -712,20 +661,15 @@ public class ReaktorAdministrationRest
 			else
 			{
 				// ON ALL COMPUTERS
-				for (int i = 0; i < this.computerList.size(); i++)
-				{
-					Computer computer = this.computerList.get(i);
-					this.computerList.remove(computer);
-
-					List<Software> softwareList = new ArrayList<>(computer.getSoftwareList());
-
-					this.removeSoftwareFromList(softwareInstance, softwareList);
-					computer.setSoftwareList(softwareList);
-
-					this.computerList.add(i, computer);
-				}
+				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
+				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
-				return ResponseEntity.ok(this.computerListToMap());
+				Optional<Action> action =this.iActionRepository.findById("uninstall");
+				if(!action.isEmpty())
+				{
+					this.addTasks(motherboardSet, action.get());
+				}
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
@@ -1526,7 +1470,7 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.GET, value = "/computer/admin/screenshot", produces = "application/zip")
-	public ResponseEntity<?> getComputer(
+	public ResponseEntity<?> getScreenshot(
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley)
 	{

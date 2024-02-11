@@ -13,4 +13,6 @@ public interface IMotherboardRepository extends JpaRepository<Motherboard, Strin
     List<Motherboard> findByTrolley(String trolley);
     
     List<Motherboard> findByClassroom(String classroom);
+    
+    List<Motherboard> findByTeacher(String teacher);
 }
