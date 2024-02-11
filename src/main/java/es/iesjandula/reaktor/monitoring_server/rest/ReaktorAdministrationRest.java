@@ -785,23 +785,6 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method removeSoftwareFromList
-	 * 
-	 * @param softwareInstance
-	 * @param softwareList
-	 */
-	private void removeSoftwareFromList(List<Software> softwareInstance, List<Software> softwareList)
-	{
-		for (Software software : softwareInstance)
-		{
-			if (softwareList.contains(software))
-			{
-				softwareList.remove(software);
-			}
-		}
-	}
-
-	/**
 	 * Method checkEmptyIds
 	 * 
 	 * @param serialNumber
@@ -1007,25 +990,7 @@ public class ReaktorAdministrationRest
 		}
 	}
 
-	/**
-	 * Method commandsToComputerByPlant send commands to computers by plant
-	 *
-	 * @param plant
-	 * @param commands
-	 */
-	private void commandsToComputerByPlant(Integer plant, List<String> commands)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getPlant() == plant)
-			{
-				computer.setCommandLine(new CommandLine(commands));
-				this.computerList.remove(computer);
-				this.computerList.add(i, computer);
-			}
-		}
-	}
+
 
 	/**
 	 * Method commandsToComputerByClassroom send commands to computers by classroom
@@ -1187,22 +1152,6 @@ public class ReaktorAdministrationRest
 		pipiList.addAll(motherboardList);
 	}
 
-	/**
-	 * Method addByPlant
-	 * 
-	 * @param plant
-	 * @param computerListDistint
-	 */
-	private void addByPlant(Integer plant, Set<Computer> computerListDistint)
-	{
-		for (Computer computer : this.computerList)
-		{
-			if (computer.getLocation().getPlant() == plant)
-			{
-				computerListDistint.add(computer);
-			}
-		}
-	}
 
 	/**
 	 * Method addByClassroom
@@ -1243,58 +1192,8 @@ public class ReaktorAdministrationRest
 		}
 	}
 
-	/**
-	 * Method getHardwarePeripheralListEdited
-	 * 
-	 * @param peripheralInstance
-	 * @param computer
-	 * @return
-	 */
-	private List<HardwareComponent> getHardwarePeripheralListEdited(List<Peripheral> peripheralInstance,
-			Computer computer)
-	{
-		List<HardwareComponent> hardwareComponentList = new ArrayList<>(computer.getHardwareList());
 
-		for (Peripheral peripheral : peripheralInstance)
-		{
-			if (hardwareComponentList.contains(peripheral))
-			{
-				hardwareComponentList.remove(peripheral);
-				hardwareComponentList.add(peripheral);
-			}
-			else
-			{
-				hardwareComponentList.add(peripheral);
-			}
-		}
-		return hardwareComponentList;
-	}
 
-	/**
-	 * Method getSoftwareListEdited
-	 * 
-	 * @param softwareInstance
-	 * @param computer
-	 * @return
-	 */
-	private List<Software> getSoftwareListEdited(List<Software> softwareInstance, Computer computer)
-	{
-		List<Software> softwareList = new ArrayList<>(computer.getSoftwareList());
-
-		for (Software software : softwareInstance)
-		{
-			if (softwareList.contains(software))
-			{
-				softwareList.remove(software);
-				softwareList.add(software);
-			}
-			else
-			{
-				softwareList.add(software);
-			}
-		}
-		return softwareList;
-	}
 
 	/**
 	 * Method computerListToMap , method for debug or testing only
@@ -1308,31 +1207,6 @@ public class ReaktorAdministrationRest
 		return computerListMap;
 	}
 
-	/**
-	 * Method shutdownComputerListDistintToMap
-	 * 
-	 * @param shutdownComputerList
-	 * @return
-	 */
-	private Map<String, List<Computer>> shutdownComputerListDistintToMap(Collection shutdownComputerList)
-	{
-		Map<String, List<Computer>> computerListMap = new HashMap<>();
-		computerListMap.put("computers", new ArrayList<>(shutdownComputerList));
-		return computerListMap;
-	}
-
-	/**
-	 * Method shutdownComputerListDistintToMap
-	 * 
-	 * @param shutdownComputerList
-	 * @return
-	 */
-	private Map<String, List<Computer>> restartComputerListDistintToMap(Collection shutdownComputerList)
-	{
-		Map<String, List<Computer>> computerListMap = new HashMap<>();
-		computerListMap.put("computers", new ArrayList<>(shutdownComputerList));
-		return computerListMap;
-	}
 
 	/**
 	 * Method sendInformation to send information of commands to computers
@@ -1396,7 +1270,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get());
+					this.addTasks(shutdownList, actionId.get(), "./files/" + execFile.getName());
 				}
 				
 				return ResponseEntity.ok().build();
@@ -1409,7 +1283,7 @@ public class ReaktorAdministrationRest
 				
 				if(actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get());
+					this.addTasks(shutdownList, actionId.get(), "./files/" + execFile.getName());
 				}
 				return ResponseEntity.ok().build();
 			}
@@ -1472,100 +1346,6 @@ public class ReaktorAdministrationRest
 				}
 			}
 		}
-	}
-
-	/**
-	 * Method fileToAllComputers send to all classroom computers
-	 *
-	 * @param file
-	 */
-	private void fileToAllComputers(List<Computer> fileComputers)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			fileComputers.add(computer);
-		}
-	}
-
-	/**
-	 * Method fileToComputerByPlant send file by plant computers
-	 *
-	 * @param file
-	 */
-	private void fileToComputerByPlant(Integer plant, List<Computer> fileComputers)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getPlant() == plant)
-			{
-				fileComputers.add(computer);
-			}
-		}
-	}
-
-	/**
-	 * Method fileToComputerByClassroom send file by classroom computers
-	 *
-	 * @param file
-	 */
-	private void fileToComputerByClassroom(String classroom, List<Computer> fileComputers)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getClassroom().equalsIgnoreCase(classroom))
-			{
-				fileComputers.add(computer);
-			}
-		}
-	}
-
-	/**
-	 * Method fileToComputerByTrolley send file by trolley computers
-	 *
-	 * @param file
-	 */
-	private void fileToComputerByTrolley(String trolley, List<Computer> fileComputers)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
-			{
-				fileComputers.add(computer);
-			}
-		}
-	}
-
-	/**
-	 * Method fileToComputerBySerialNumber send file by serial number computers
-	 *
-	 * @param file
-	 */
-	private void fileToComputerBySerialNumber(String serialNumber, List<Computer> fileComputers)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer computer = this.computerList.get(i);
-			if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
-			{
-				fileComputers.add(computer);
-			}
-		}
-	}
-
-	/**
-	 *
-	 * @param fileComputers change the list to a map
-	 * @return
-	 */
-	private Map<String, List<Computer>> computerListToMap(List<Computer> fileComputers)
-	{
-		Map<String, List<Computer>> computerListMap = new HashMap<>();
-		computerListMap.put("computers", fileComputers);
-		return computerListMap;
 	}
 
 	/**
