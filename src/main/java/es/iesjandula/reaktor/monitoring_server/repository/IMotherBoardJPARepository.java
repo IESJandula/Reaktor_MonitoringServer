@@ -6,5 +6,5 @@ import es.iesjandula.reaktor.models.jpa.MotherBoard;
 
 public interface IMotherBoardJPARepository extends JpaRepository<MotherBoard, String> 
 {
-	public MotherBoard findBySerialNumber(String serialNumber);
+	
 }
