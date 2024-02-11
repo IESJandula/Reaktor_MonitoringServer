@@ -39,6 +39,7 @@ import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Task;
+import es.iesjandula.reaktor.models.Usb;
 import es.iesjandula.reaktor.models.Id.TaskId;
 import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
@@ -249,7 +250,12 @@ public class ReaktorAdministrationRest
 		}
 	}
 	
-	private void addTasks(Set<Motherboard> motherboardList, Action action)
+	/**
+	 * Method addTasks
+	 * @param motherboardList
+	 * @param action
+	 */
+	private void addTasks(Set<Motherboard> motherboardList, Action action,String info)
 	{
 		Date date = new Date();
 		for (Motherboard motherboard : motherboardList)
@@ -264,7 +270,7 @@ public class ReaktorAdministrationRest
 			task.setTaskId(taskId);
 			task.setAction(action);
 			task.setMotherboard(motherboard);
-			task.setInfo("");
+			task.setInfo(info);
 			task.setStatus("TO DO");
 			
 			this.iTaskRepository.saveAndFlush(task);
@@ -356,7 +362,7 @@ public class ReaktorAdministrationRest
 	public ResponseEntity<?> postPeripheral(
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley,
-			@RequestBody(required = true) List<Peripheral> peripheralInstance)
+			@RequestBody(required = true) Usb usb)
 	{
 		try
 		{
@@ -376,20 +382,10 @@ public class ReaktorAdministrationRest
 
 				if (trolley != null)
 				{
-					// ON SPECIFIC COMPUTER BY trolley
-					for (int i = 0; i < this.computerList.size(); i++)
-					{
-						Computer computer = this.computerList.get(i);
-						this.computerList.remove(computer);
-						if (computer.getLocation().getTrolley().equalsIgnoreCase(trolley))
-						{
-							List<HardwareComponent> hardwareComponentList = this
-									.getHardwarePeripheralListEdited(peripheralInstance, computer);
-							computer.setHardwareList(hardwareComponentList);
-						}
-						this.computerList.add(i, computer);
-					}
-					methodsUsed += "trolley,";
+					List<Motherboard> motherboardList =  this.iMotherboardRepository.findByTrolley(trolley);
+					
+					
+					
 				}
 				if (classroom != null)
 				{
