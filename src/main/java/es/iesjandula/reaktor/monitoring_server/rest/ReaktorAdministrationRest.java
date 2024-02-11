@@ -1,7 +1,9 @@
 package es.iesjandula.reaktor.monitoring_server.rest;
 
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -1273,7 +1275,7 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
-	public ResponseEntity<?> postComputerCommandLine(
+	public ResponseEntity<?> postComputerExecFile(
 			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom, 
 			@RequestHeader(required = false) String trolley,
@@ -1282,7 +1284,7 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			List<Computer> fileComputers = new ArrayList<>();
+			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
 			{
 				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
@@ -1296,35 +1298,50 @@ public class ReaktorAdministrationRest
 				if (serialNumber != null)
 				{
 					// ALL FILE ON SPECIFIC COMPUTER BY serialNumber
-					this.fileToComputerBySerialNumber(serialNumber, fileComputers);
+					this.addBySerialNumber(serialNumber, shutdownList);
 
 				}
 				if (trolley != null)
 				{
 					// ALL FILE ON SPECIFIC COMPUTER BY trolley
-					this.fileToComputerByTrolley(trolley, fileComputers);
+					this.addByTrolley(trolley, shutdownList);
 
 				}
 				if (classroom != null)
 				{
 					// ALL FILE ON SPECIFIC COMPUTER BY classroom
-					this.fileToComputerByClassroom(classroom, fileComputers);
+					this.addByClassroom(classroom, shutdownList);
 
 				}
-				if (plant != null)
-				{
-					// ALL FILE ON SPECIFIC COMPUTER BY plant
-					this.fileToComputerByPlant(plant, fileComputers);
-
-				}
+//				if (plant != null)
+//				{
+//					// ALL FILE ON SPECIFIC COMPUTER BY plant
+//					this.fileToComputerByPlant(plant, fileComputers);
+//
+//				}
 				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.computerListToMap(fileComputers));
+				
+				this.writeText("./files/" + execFile.getName(), execFile.getBytes());
+				Optional<Action> actionId = this.iActionRepository.findById("file");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(shutdownList, actionId.get());
+				}
+				
+				return ResponseEntity.ok().build();
 			}
 			else
 			{
 				// COMMANDS RUN ON ALL COMPUTERS
-				this.fileToAllComputers(fileComputers);
-				return ResponseEntity.ok(this.computerListToMap(fileComputers));
+				this.addByAll(shutdownList);
+				Optional<Action> actionId = this.iActionRepository.findById("file");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(shutdownList, actionId.get());
+				}
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
@@ -1334,6 +1351,57 @@ public class ReaktorAdministrationRest
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 
+	}
+	
+	public void writeText(String name, byte[] content)
+	{
+		
+		FileOutputStream fileOutputStream = null;
+        
+        DataOutputStream dataOutputStream = null;
+		
+		try
+		{
+			fileOutputStream = new FileOutputStream(name);
+			
+			dataOutputStream = new DataOutputStream(fileOutputStream);
+			
+			
+
+			dataOutputStream.write(content);
+
+			dataOutputStream.flush();
+
+		} catch (IOException e)
+		{
+			String message = "Error";
+			log.error(message, e);
+		} finally
+		{
+			if (dataOutputStream != null)
+			{
+				try
+				{
+					dataOutputStream.close();
+				} catch (IOException e)
+				{
+					String message = "Error";
+					log.error(message, e);
+				}
+			}
+
+			if (fileOutputStream != null)
+			{
+				try
+				{
+					fileOutputStream.close();
+				} catch (IOException e)
+				{
+					String message = "Error";
+					log.error(message, e);
+				}
+			}
+		}
 	}
 
 	/**
