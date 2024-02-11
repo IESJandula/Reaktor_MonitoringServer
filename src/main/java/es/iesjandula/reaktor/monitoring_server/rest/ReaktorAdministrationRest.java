@@ -175,8 +175,6 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			Set<Computer> shutdownComputerListDistint = new HashSet<>();
-			
 			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
 
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
@@ -225,7 +223,7 @@ public class ReaktorAdministrationRest
 					this.addTasks(shutdownList, actionId.get());
 				}
 				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 			else
 			{
@@ -238,7 +236,7 @@ public class ReaktorAdministrationRest
 					this.addTasks(shutdownList, actionId.get());
 				}
 				log.info("By all Computers");
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
@@ -453,7 +451,7 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			Set<Computer> sendScreenshotOrderComputerListDistint = new HashSet<>();
+			Set<Motherboard> screenshotList = new HashSet<Motherboard>();
 
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((classroom != null) || (trolley != null))
@@ -470,24 +468,36 @@ public class ReaktorAdministrationRest
 
 				if (trolley != null)
 				{
-					this.addByTrolley(trolley, sendScreenshotOrderComputerListDistint);
+					this.addByTrolley(trolley, screenshotList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
-					this.addByClassroom(classroom, sendScreenshotOrderComputerListDistint);
+					this.addByClassroom(classroom, screenshotList);
 					methodsUsed += "classroom,";
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
+				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(screenshotList, actionId.get());
+				}
 				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(sendScreenshotOrderComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				this.addByAll(sendScreenshotOrderComputerListDistint);
+				this.addByAll(screenshotList);
+				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
+				
+				if(actionId.isPresent())
+				{
+					this.addTasks(screenshotList, actionId.get());
+				}
 				log.info("By all Computers");
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(sendScreenshotOrderComputerListDistint));
+				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
