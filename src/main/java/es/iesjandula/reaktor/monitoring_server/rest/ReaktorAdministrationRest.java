@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -31,6 +33,15 @@ import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
+import es.iesjandula.reaktor.models.jpa.Action;
+import es.iesjandula.reaktor.models.jpa.MotherBoard;
+import es.iesjandula.reaktor.models.jpa.Status;
+import es.iesjandula.reaktor.models.jpa.Task;
+import es.iesjandula.reaktor.models.jpa.TaskId;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherBoardJPARepository;
+import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
+import es.iesjandula.reaktor.monitoring_server.utils.FillTask;
+import es.iesjandula.reaktor.monitoring_server.utils.FindMotherboard;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -43,6 +54,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReaktorAdministrationRest
 {
+	
+	@Autowired
+	private IMotherBoardJPARepository motherBoardRepo;
+	
+	@Autowired
+	private ITaskRepository taskRepo;
+	
 	/** Attribute computerList */
 	private List<Computer> computerList = new ArrayList<>(List.of(
 			new Computer("sn123", "and123", "cn123", "windows", "paco", new Location("0.5", 0, "trolley1"),
@@ -156,56 +174,31 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			Set<Computer> shutdownComputerListDistint = new HashSet<>();
-
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
+			FillTask fillTask = null;
+			FindMotherboard findBoard = new FindMotherboard(this.computerList);
+			serialNumber = serialNumber==null ? "" : serialNumber;
+			classroom = classroom==null ? "" : classroom;
+			trolley = trolley==null ? "" : trolley;
+			
+			if(serialNumber.isEmpty() && classroom.isEmpty() && trolley.isEmpty() && plant==null)
 			{
-				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkBlanksOrEmptys(serialNumber, classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
-
-				if (serialNumber != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY serialNumber
-					this.addBySerialNumber(serialNumber, shutdownComputerListDistint);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY trolley
-					this.addByTrolley(trolley, shutdownComputerListDistint);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY classroom
-					this.addByClassroom(classroom, shutdownComputerListDistint);
-					methodsUsed += "classroom,";
-				}
-				if (plant != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY plant
-					this.addByPlant(plant, shutdownComputerListDistint);
-					methodsUsed += "plant,";
-				}
-				log.info("Parameters Used: " + methodsUsed);
-				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
+				List<MotherBoard> motherBoards =  this.motherBoardRepo.findAll();
+				fillTask = new FillTask(motherBoards);
+				List<Task> tasks = fillTask.doOnAll(new Action("shutdown","poweroff","shutdown",null));
+				this.taskRepo.saveAllAndFlush(tasks);
 			}
 			else
 			{
-				// SHUTDOWN ALL COMPUTERS
-				this.addByAll(shutdownComputerListDistint);
-				log.info("By all Computers");
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(shutdownComputerListDistint));
+				if(!serialNumber.isEmpty())
+				{
+					Date date = new Date();
+					Action action = new Action("shutdown","poweroff","shutdown",null);
+					TaskId id = new TaskId(action.getName(),date,"",findBoard.findBySerialNumber(serialNumber).getSerialNumber());
+					this.taskRepo.saveAndFlush(new Task(id,Status.TO_DO,findBoard.findBySerialNumber(serialNumber),action));
+				}
 			}
+			
+			return ResponseEntity.ok().body("OK");
 		}
 		catch (Exception exception)
 		{
