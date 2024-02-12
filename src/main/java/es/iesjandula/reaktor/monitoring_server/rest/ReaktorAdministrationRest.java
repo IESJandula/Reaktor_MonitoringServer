@@ -209,7 +209,7 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method shutdownComputers
+	 * Method reboot Computers
 	 * 
 	 * @param serialNumber
 	 * @param classroom
@@ -224,53 +224,34 @@ public class ReaktorAdministrationRest
 			@RequestHeader(required = false) String trolley,
 			@RequestHeader(required = false) Integer plant)
 	{
+		
 		try
 		{
-			Set<Computer> restartComputerListDistint = new HashSet<>();
-
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (plant != null))
+			FillTask fillTask = null;
+			FindMotherboard findBoard = new FindMotherboard(this.computerList);
+			serialNumber = serialNumber==null ? "" : serialNumber;
+			classroom = classroom==null ? "" : classroom;
+			trolley = trolley==null ? "" : trolley;
+			
+			if(serialNumber.isEmpty() && classroom.isEmpty() && trolley.isEmpty() && plant==null)
 			{
-				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkBlanksOrEmptys(serialNumber, classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
-
-				if (serialNumber != null)
-				{
-					this.addBySerialNumber(serialNumber, restartComputerListDistint);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					this.addByTrolley(trolley, restartComputerListDistint);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					this.addByClassroom(classroom, restartComputerListDistint);
-					methodsUsed += "classroom,";
-				}
-				if (plant != null)
-				{
-					this.addByPlant(plant, restartComputerListDistint);
-					methodsUsed += "plant,";
-				}
-				log.info("Parameters Used: " + methodsUsed);
-				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok(this.shutdownComputerListDistintToMap(restartComputerListDistint));
+				List<MotherBoard> motherBoards =  this.motherBoardRepo.findAll();
+				fillTask = new FillTask(motherBoards);
+				List<Task> tasks = fillTask.doOnAll(new Action("shutdown","poweroff","shutdown",null));
+				this.taskRepo.saveAllAndFlush(tasks);
 			}
 			else
 			{
-				this.addByAll(restartComputerListDistint);
-				log.info("By all Computers");
-				return ResponseEntity.ok(this.restartComputerListDistintToMap(restartComputerListDistint));
+				if(!serialNumber.isEmpty())
+				{
+					Date date = new Date();
+					Action action = new Action("reboot","reboot","shutdown /r",null);
+					TaskId id = new TaskId(action.getName(),date,"",findBoard.findBySerialNumber(serialNumber).getSerialNumber());
+					this.taskRepo.saveAndFlush(new Task(id,Status.TO_DO,findBoard.findBySerialNumber(serialNumber),action));
+				}
 			}
+			
+			return ResponseEntity.ok().body("OK");
 		}
 		catch (Exception exception)
 		{
