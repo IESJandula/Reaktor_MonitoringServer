@@ -19,4 +19,6 @@ public interface IMotherboardRepository extends JpaRepository<Motherboard, Strin
     List<Motherboard> findByAndaluciaId(String andaluciaId);
     
     List<Motherboard> findByComputerNumber(String computerNumber);
+    
+    List<Motherboard> findByFloor(int floor);
 }
