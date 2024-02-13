@@ -2,7 +2,9 @@ package es.iesjandula.reaktor.monitoring_server.rest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
+import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.Location;
@@ -20,7 +23,9 @@ import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
+import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.monitoring.Actions;
+import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,6 +38,10 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReaktorMonitoringRest
 {
+	@Autowired
+	ITaskRepository iTaskRepository;
+	
+	
 	/** Attribute computerList */
 	private List<Computer> computerList = new ArrayList<>(List.of(
 			new Computer("sn123", "and123", "cn123", "windows", "paco", new Location("0.5", 0, "trolley1"),
@@ -48,10 +57,7 @@ public class ReaktorMonitoringRest
 					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog())
 
 	));
-	/** Attribute shutDownComputerList */
-	private List<Computer> shutDownComputerList = new ArrayList<>(List.of(
-			new Computer("sn123556", "and123556", "cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog())));
+	
 	/** Attribute restartDownComputerList */
 	private List<Computer> restartDownComputerList = new ArrayList<>(List.of(
 			new Computer("sn123556", "and123556", "cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"),
@@ -124,12 +130,12 @@ public class ReaktorMonitoringRest
 	@RequestMapping(method = RequestMethod.POST, value = "/send/status", consumes = "application/json")
 	public ResponseEntity<?> sendStatusComputer(
 			@RequestHeader(required = true) String serialNumber,
-			@RequestBody(required = true) List<Status> statusList)
+			@RequestBody(required = true) Task taskStatus)
 	{
 		try
 		{
 			log.info(serialNumber);
-			log.info(statusList.toString());
+			log.info(taskStatus.toString());
 
 			if (!this.isUsable(serialNumber))
 			{
@@ -143,8 +149,16 @@ public class ReaktorMonitoringRest
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
+			else if(taskStatus.getStatus().equals(Action.STATUS_FAILURE))
+			{	
+				iTaskRepository.save(taskStatus);
+				String error = "Error al ejecutar el comando";
+				ComputerError computerError = new ComputerError(404, error, null);
+				return ResponseEntity.status(404).body(computerError.toMap());
+			}
 			else
 			{
+				iTaskRepository.save(taskStatus);
 				return ResponseEntity.ok().body("OK");
 			}
 
@@ -426,8 +440,9 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			Actions actionsToDo = new Actions();
-			List<Status> statusList = new ArrayList<>();
+			List<Task> taskList = new ArrayList<Task>();
+			
+			
 			// --- SEARCHING THE COMPUTER ---
 			if ((serialNumber == null) || serialNumber.isBlank() || serialNumber.isEmpty())
 			{
@@ -435,41 +450,13 @@ public class ReaktorMonitoringRest
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-			for (Computer computer : this.computerList)
-			{
-				// --- GETTING THE COMPUTER BY S/N ---
-				if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
-				{
-					// --- SCANNING TASKS ---
-					// --- SHUTDOWN ---
-					this.sendStatusComputerShutdown(serialNumber, statusList, actionsToDo);
-					// --- RESTART ---
-					this.sendStatusComputerRestart(serialNumber, statusList, actionsToDo);
-					// --- COMMAND EXECUTE ---
-					this.sendStatusComputerCommandExecute(serialNumber, statusList, actionsToDo);
-					// --- BLOCK DISPOSITIVE ---
-					this.sendStatusComputerBlockDisp(serialNumber, statusList, computer, actionsToDo);
-					// --- APERTURA REMOTA DE ENLACE WEB ---
-					this.sendStatusComputerOpenWeb(serialNumber, statusList, actionsToDo);
-
-					// --- INSTALACION REMOTA DE APLICACIONES ---
-					this.sendStatusComputerInstallApp(serialNumber, statusList, actionsToDo);
-
-					// --- DESISNSTALACION REMOTA DE APP ---
-					this.sendStatusComputerUnistallApp(serialNumber, statusList, actionsToDo);
-
-					// --- EJECUCION DE CFG WIFI ---
-					this.sendStatusComputerCfgWifi(serialNumber, statusList, actionsToDo);
-
-					// --- ACTUALIZACION DE JUNTA ANDALUCIA ---
-					this.sendStatusComputerUpdateAndalucia(serialNumber, statusList, computer, actionsToDo);
-					// --- ACTUALIZACION DE NUMERO DE SERIE ---
-					this.sendStatusComputerUpdateSn(serialNumber, statusList, computer, actionsToDo);
-					// --- ACTUALIZACION DE NUM DE CAJA ---
-					this.sendStatusComputerUpdateCn(serialNumber, statusList, computer, actionsToDo);
-				}
-			}
-			return ResponseEntity.ok().body(actionsToDo);
+			
+			taskList = iTaskRepository.findBySerialNumberAndStatus(serialNumber,Action.STATUS_TODO); 
+			
+			taskList.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+			taskList.get(0).setStatus(Action.STATUS_IN_PROGRESS);
+			iTaskRepository.save(taskList.get(0));
+			return ResponseEntity.ok().body(taskList.get(0));
 		}
 		catch (Exception exception)
 		{
@@ -776,27 +763,6 @@ public class ReaktorMonitoringRest
 				actionsToDo.setRestart(true);
 				this.restartDownComputerList.remove(cmp);
 			}
-		}
-	}
-
-	/**
-	 * Method sendStatusComputerShutdown
-	 *
-	 * @param serialNumber
-	 * @param statusList
-	 */
-	private void sendStatusComputerShutdown(String serialNumber, List<Status> statusList, Actions actionsToDo)
-	{
-		for (int i = 0; i < this.shutDownComputerList.size(); i++)
-		{
-			Computer cmp = this.shutDownComputerList.get(i);
-			if (cmp.getSerialNumber().equalsIgnoreCase(serialNumber))
-			{
-				// ------------------------- SHUTDOWN LOGIC-------------------------------
-				actionsToDo.setShutdown(true);
-				this.shutDownComputerList.remove(cmp);
-			}
-
 		}
 	}
 
