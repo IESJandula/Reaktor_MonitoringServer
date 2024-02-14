@@ -86,36 +86,54 @@ public class ReaktorMonitoringRest
 	@RequestMapping(method = RequestMethod.POST, value = "/send/status", consumes = "application/json")
 	public ResponseEntity<?> sendStatusComputer(
 			@RequestHeader(required = true) String serialNumber,
-			@RequestBody(required = true) List<Status> statusList)
+			@RequestBody(required = true) Status status)
 	{
 		try
 		{
-			// --- LOG INFO ---
 			log.info(serialNumber);
-			log.info(statusList.toString());
-
-			// --- SI NO CUMPLE LOS FILTROS ---
-			if (!this.isUsable(serialNumber))
+			log.info(status.toString());
+			//Comprobar motherboard si existe
+			
+			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
+			if (motherboard.isEmpty())
 			{
-				String error = "Any Paramater Is Empty or Blank";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				String error = "Incorrect Serial Number";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			// --- SI NO EXISTE ---
-			else if (!this.chekIfSerialNumberExistBoolean(serialNumber))
+			
+			//Comprobar si existe la Task por id
+			TaskId taskId = new TaskId(serialNumber, status.getTaskDTO().getName(), status.getTaskDTO().getDate());
+			Optional<Task> task = this.iTaskRepository.findById(taskId);
+			
+			if (task.isEmpty())
 			{
-				String error = "The serial number dont exist";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				String error = "Incorrect Task ID";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			// --- CASO CONTRARIO ---
+			//Comprobar el estado de la tarea, si es in progress
+			if(!task.get().getStatus().equals(Action.STATUS_IN_PROGRESS))
+			{
+				String error = "Task not in progress";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
+			}
+			//Comprobar el estado, si esta correcto o a fallado, asigna el estado a la tarea
+			if(status.getStatus())
+			{
+				task.get().setStatus(Action.STATUS_DONE);
+			}
 			else
 			{
-				return ResponseEntity.ok().body("OK");
+				task.get().setStatus(Action.STATUS_FAILURE);
+				
+				log.error(status.getStatusInfo(), status.getError());
 			}
-
+			this.iTaskRepository.saveAndFlush(task.get());
+			
+			return ResponseEntity.ok().build();
 		}
-		// --- CAPTURAMOS EXCEPCION Y ARROJAMOS ---
 		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
