@@ -5,7 +5,6 @@ import java.io.DataOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -23,17 +22,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Action;
-import es.iesjandula.reaktor.models.CommandLine;
-import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.Location;
-import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Reaktor;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
 import es.iesjandula.reaktor.models.Id.TaskId;
-import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -48,25 +42,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReaktorMonitoringRest
 {
-	/** Attribute computerList */
-	private List<Computer> computerList = new ArrayList<>(List.of(
-			new Computer("sn123", "and123", "cn123", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog()),
-			new Computer("sn1234", "and1234", "cn12344", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog()),
-			new Computer("sn123434231423423", "and12355", "cn123455", "windows", "paco",
-					new Location("0.7", 0, "trolley2"), new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123556", "and123556", "cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog()),
-			new Computer("sn123777", "and123777", "cn1234777", "windows", "paco", new Location("0.9", 0, "trolley3"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(), new MonitorizationLog())
-
-	));
-	
-	/** Attribute IActionRepository*/
-	@Autowired
-	private IActionRepository actionRepository;
 	
 	/** Attribute iMotherboardRepository*/
 	@Autowired
@@ -373,41 +348,6 @@ public class ReaktorMonitoringRest
 				}
 			}
 		}
-	}
-
-	/**
-	 * this Method check if the serialNumber is blank or empty
-	 *
-	 * @param serialNumber, the serial Number of the computer
-	 * @return boolean
-	 */
-	private boolean isUsable(String serialNumber)
-	{
-		boolean usable = false;
-		if (!serialNumber.isBlank() || !serialNumber.isEmpty())
-		{
-			usable = true;
-		}
-		return usable;
-	}
-
-
-	/**
-	 * Method chekIfSerialNumberExistBoolean
-	 * @param serialNumber
-	 * @return boolean
-	 */
-	private boolean chekIfSerialNumberExistBoolean(String serialNumber)
-	{
-		boolean exist = false;
-		for (Computer computer : this.computerList)
-		{
-			if (computer.getSerialNumber().equals(serialNumber))
-			{
-				exist = true;
-			}
-		}
-		return exist;
 	}
 
 	/**
