@@ -1,8 +1,14 @@
 package es.iesjandula.reaktor.monitoring_server.rest;
 
+import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,10 +23,17 @@ import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
+import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
+import es.iesjandula.reaktor.models.Task;
+import es.iesjandula.reaktor.models.DTO.TaskDTO;
+import es.iesjandula.reaktor.models.Id.TaskId;
 import es.iesjandula.reaktor.models.monitoring.Actions;
+import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -113,6 +126,15 @@ public class ReaktorMonitoringRest
 	private List<Computer> statusComputerList = new ArrayList<>(List.of(new Computer("sn123556", "and123556",
 			"cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"), new ArrayList<>(), new ArrayList<>(),
 			new CommandLine(List.of("start chrome")), new MonitorizationLog())));
+	
+	@Autowired
+	private IActionRepository actionRepository;
+	
+	@Autowired
+	private IMotherboardRepository iMotherboardRepository;
+	
+	@Autowired
+	private ITaskRepository iTaskRepository;
 
 	/**
 	 * Method sendStatusComputer
@@ -163,29 +185,38 @@ public class ReaktorMonitoringRest
 	 * @param serialNumber, the serial number of the computer
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/get/file")
-	public ResponseEntity<?> getAnyFile(@RequestHeader(required = true) String serialNumber)
+	@RequestMapping(method = RequestMethod.GET, value = "/get/file", produces = "multipart/form-data")
+	public ResponseEntity<?> getAnyFile
+	(
+				@RequestHeader(required = true) String serialNumber,
+				@RequestBody(required = true) TaskDTO taskDTO)
 	{
 		try
 		{
-			if ((serialNumber != null) && this.isUsable(serialNumber))
+			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
+			
+			if (motherboard.isEmpty())
 			{
-				// Check if the serial number Exist
-				Computer computer = this.chekIfSerialNumberExist(serialNumber);
-				if (computer == null)
-				{
-					String error = "Compuer not found";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
-				return ResponseEntity.ok(computer);
+				String error = "Incorrect Serial Number";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			else
+			
+			TaskId taskId = new TaskId(serialNumber, taskDTO.getName(), taskDTO.getDate());
+			Optional<Task> task = this.iTaskRepository.findById(taskId);
+			
+			if (task.isEmpty())
 			{
-				String error = "Any Paramater Is Empty or Blank";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				String error = "Incorrect Task ID";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
+			
+			
+			InputStreamResource outcomeInputStreamResource = new InputStreamResource(new java.io.ByteArrayInputStream(this.readText(taskDTO.getInfo())));
+			
+			return ResponseEntity.ok().body(outcomeInputStreamResource);
+			
 		}
 		catch (Exception exception)
 		{
@@ -194,9 +225,58 @@ public class ReaktorMonitoringRest
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
+	
+	public byte[] readText(String name) throws ComputerError
+    {
+
+        FileInputStream fileInputStream = null;
+
+        DataInputStream dataInputStream = null;
+
+        try
+        {
+            fileInputStream = new FileInputStream(name);
+
+            dataInputStream = new DataInputStream(fileInputStream);
+
+            return dataInputStream.readAllBytes();
+        } 
+        catch (IOException exception)
+        {
+            String message = "Error";
+            log.error(message, exception);
+            throw new ComputerError(1, message, exception);
+        } 
+        finally
+        {
+            if (dataInputStream != null)
+            {
+                try
+                {
+                    dataInputStream.close();
+                } catch (IOException exception)
+                {
+                    String message = "Error";
+                    log.error(message, exception);
+                }
+            }
+
+            if (fileInputStream != null)
+            {
+                try
+                {
+                    fileInputStream.close();
+                } catch (IOException exception)
+                {
+                    String message = "Error";
+                    log.error(message, exception);
+                }
+            }
+        }
+    }
 
 	/**
-	 * Getting the screenshot order , the compuer send the serialNumber to identify
+	 * Getting the screenshot order , the computer send the serialNumber to identify
 	 *
 	 * @param serialNumber, the serial number of the computer
 	 * @return ResponseEntity
