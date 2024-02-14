@@ -476,6 +476,8 @@ public class ReaktorMonitoringRest
 			// --- CREAMOS TASK DTO---
 			TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
 			
+			// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
+			task.setStatus(Action.STATUS_IN_PROGRESS);
 			// RETORNAMOS
 			return ResponseEntity.ok().body(taskDTO);
 		}
