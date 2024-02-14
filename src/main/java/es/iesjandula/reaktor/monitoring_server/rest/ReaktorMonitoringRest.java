@@ -1,9 +1,12 @@
 package es.iesjandula.reaktor.monitoring_server.rest;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -189,8 +192,8 @@ public class ReaktorMonitoringRest
 	@RequestMapping(method = RequestMethod.GET, value = "/get/file", produces = "multipart/form-data")
 	public ResponseEntity<?> getAnyFile
 	(
-				@RequestHeader(required = true) String serialNumber,
-				@RequestBody(required = true) TaskDTO taskDTO)
+		@RequestHeader(required = true) String serialNumber,
+		@RequestBody(required = true) TaskDTO taskDTO)
 	{
 		try
 		{
@@ -277,38 +280,46 @@ public class ReaktorMonitoringRest
     }
 
 	/**
-	 * Getting the screenshot order , the computer send the serialNumber to identify
+	 * Getting the files , the computer send the serialNumber to identify
 	 *
 	 * @param serialNumber, the serial number of the computer
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(method = RequestMethod.GET, value = "/get/screenshot")
-	public ResponseEntity<?> getScreenshotOrder(@RequestHeader(required = true) String serialNumber)
+	@RequestMapping(method = RequestMethod.POST, value = "/send/screenshot", consumes = "multipart/form-data")
+	public ResponseEntity<?> sendScreenshot
+	(
+		@RequestBody(required = true) MultipartFile screenshot,
+		@RequestHeader(required = true) String serialNumber,
+		@RequestHeader(required = true) Long dateLong)
 	{
 		try
 		{
-			if ((serialNumber != null) && this.isUsable(serialNumber))
+			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
+			
+			if (motherboard.isEmpty())
 			{
-				// Check if the serial number Exist and return a computer
-				boolean order = this.chekOrder(serialNumber);
-				if (!order)
-				{
-					String error = "Computer without screenshot order";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
-				else
-				{
-					this.screenshotOrderComputerList.remove(this.chekIfSerialNumberExist(serialNumber));
-					return ResponseEntity.ok("OK");
-				}
+				String error = "Incorrect Serial Number";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			else
+			
+			Date date = new Date(dateLong);
+			
+			TaskId taskId = new TaskId(serialNumber, "screenshot", date);
+			Optional<Task> task = this.iTaskRepository.findById(taskId);
+			
+			if (task.isEmpty())
 			{
-				String error = "Any Paramater Is Empty or Blank";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				String error = "Incorrect Task ID";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
+			
+			String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
+			
+			this.writeText(".\\screenshots\\" + serialNumber + "\\" + finalDate, screenshot.getBytes());
+			return ResponseEntity.ok().build();
+
 		}
 		catch (Exception exception)
 		{
@@ -317,36 +328,59 @@ public class ReaktorMonitoringRest
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
-
+	
 	/**
-	 * Getting the files , the computer send the serialNumber to identify
-	 *
-	 * @param serialNumber, the serial number of the computer
-	 * @return ResponseEntity
+	 * Method writeText
+	 * 
+	 * @param name
+	 * @param content
 	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/send/screenshot", consumes = "multipart/form-data")
-	public ResponseEntity<?> sendScreenshot(@RequestBody(required = true) MultipartFile screenshot)
+	public void writeText(String name, byte[] content)
 	{
+
+		FileOutputStream fileOutputStream = null;
+
+		DataOutputStream dataOutputStream = null;
+
 		try
 		{
-			if (screenshot != null)
+			fileOutputStream = new FileOutputStream(name);
+
+			dataOutputStream = new DataOutputStream(fileOutputStream);
+
+			dataOutputStream.write(content);
+
+			dataOutputStream.flush();
+
+		} catch (IOException exception)
+		{
+			String message = "Error";
+			log.error(message, exception);
+		} finally
+		{
+			if (dataOutputStream != null)
 			{
-				// Check if the serial number Exist
-				return ResponseEntity.ok("OK");
-			}
-			else
-			{
-				String error = "The parameter is null";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				try
+				{
+					dataOutputStream.close();
+				} catch (IOException exception)
+				{
+					String message = "Error";
+					log.error(message, exception);
+				}
 			}
 
-		}
-		catch (Exception exception)
-		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
-			return ResponseEntity.status(500).body(computerError.toMap());
+			if (fileOutputStream != null)
+			{
+				try
+				{
+					fileOutputStream.close();
+				} catch (IOException exception)
+				{
+					String message = "Error";
+					log.error(message, exception);
+				}
+			}
 		}
 	}
 
