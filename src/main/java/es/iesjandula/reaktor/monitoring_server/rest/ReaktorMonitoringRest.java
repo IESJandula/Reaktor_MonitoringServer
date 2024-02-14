@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
+import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.Location;
@@ -506,50 +507,22 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			Actions actionsToDo = new Actions();
-			List<Status> statusList = new ArrayList<>();
-			// --- SEARCHING THE COMPUTER ---
-			if ((serialNumber == null) || serialNumber.isBlank() || serialNumber.isEmpty())
+			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
+			
+			if (motherboard.isEmpty())
 			{
-				String error = "SerialNumber is Null, Empty or Blank";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
+				String error = "Incorrect Serial Number";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			for (Computer computer : this.computerList)
-			{
-				// --- GETTING THE COMPUTER BY S/N ---
-				if (computer.getSerialNumber().equalsIgnoreCase(serialNumber))
-				{
-					// --- SCANNING TASKS ---
-					// --- SHUTDOWN ---
-					this.sendStatusComputerShutdown(serialNumber, statusList, actionsToDo);
-					// --- RESTART ---
-					this.sendStatusComputerRestart(serialNumber, statusList, actionsToDo);
-					// --- COMMAND EXECUTE ---
-					this.sendStatusComputerCommandExecute(serialNumber, statusList, actionsToDo);
-					// --- BLOCK DISPOSITIVE ---
-					this.sendStatusComputerBlockDisp(serialNumber, statusList, computer, actionsToDo);
-					// --- APERTURA REMOTA DE ENLACE WEB ---
-					this.sendStatusComputerOpenWeb(serialNumber, statusList, actionsToDo);
 
-					// --- INSTALACION REMOTA DE APLICACIONES ---
-					this.sendStatusComputerInstallApp(serialNumber, statusList, actionsToDo);
-
-					// --- DESISNSTALACION REMOTA DE APP ---
-					this.sendStatusComputerUnistallApp(serialNumber, statusList, actionsToDo);
-
-					// --- EJECUCION DE CFG WIFI ---
-					this.sendStatusComputerCfgWifi(serialNumber, statusList, actionsToDo);
-
-					// --- ACTUALIZACION DE JUNTA ANDALUCIA ---
-					this.sendStatusComputerUpdateAndalucia(serialNumber, statusList, computer, actionsToDo);
-					// --- ACTUALIZACION DE NUMERO DE SERIE ---
-					this.sendStatusComputerUpdateSn(serialNumber, statusList, computer, actionsToDo);
-					// --- ACTUALIZACION DE NUM DE CAJA ---
-					this.sendStatusComputerUpdateCn(serialNumber, statusList, computer, actionsToDo);
-				}
-			}
-			return ResponseEntity.ok().body(actionsToDo);
+			List<Task> tasks = this.iTaskRepository.findBySerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
+			
+			tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+			Task task = tasks.get(0);			
+			TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
+			
+			return ResponseEntity.ok().body(taskDTO);
 		}
 		catch (Exception exception)
 		{
