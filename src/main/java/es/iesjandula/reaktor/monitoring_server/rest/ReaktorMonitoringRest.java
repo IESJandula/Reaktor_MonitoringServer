@@ -90,27 +90,32 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
+			// --- LOG INFO ---
 			log.info(serialNumber);
 			log.info(statusList.toString());
 
+			// --- SI NO CUMPLE LOS FILTROS ---
 			if (!this.isUsable(serialNumber))
 			{
 				String error = "Any Paramater Is Empty or Blank";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
+			// --- SI NO EXISTE ---
 			else if (!this.chekIfSerialNumberExistBoolean(serialNumber))
 			{
 				String error = "The serial number dont exist";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
+			// --- CASO CONTRARIO ---
 			else
 			{
 				return ResponseEntity.ok().body("OK");
 			}
 
 		}
+		// --- CAPTURAMOS EXCEPCION Y ARROJAMOS ---
 		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
@@ -133,8 +138,10 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
+			// --- SACAMOS EL MOTHERBOARD POR EL SERIAL NUMBER ---
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 			
+			// --- SI NO ES EMPTY ---
 			if (motherboard.isEmpty())
 			{
 				String error = "Incorrect Serial Number";
@@ -142,9 +149,13 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 			
+			// --- CREAMOS EL TASK ID ---
 			TaskId taskId = new TaskId(serialNumber, taskDTO.getName(), taskDTO.getDate());
+			
+			// --- BUSCAMOS POR EL TASK ID ---
 			Optional<Task> task = this.iTaskRepository.findById(taskId);
 			
+			// --- SI EL TASKID NO ESTA VACIO ---
 			if (task.isEmpty())
 			{
 				String error = "Incorrect Task ID";
@@ -152,12 +163,14 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 			
-			
+			// --- CREAMOS EL IMPUT STREAM ---
 			InputStreamResource outcomeInputStreamResource = new InputStreamResource(new java.io.ByteArrayInputStream(this.readText(taskDTO.getInfo())));
 			
+			// --- RESPONDEMOS CON EL INPUT STREAM ---
 			return ResponseEntity.ok().body(outcomeInputStreamResource);
 			
 		}
+		// --- CAPTURAMOS Y ARROJAMOS ---
 		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
@@ -175,18 +188,20 @@ public class ReaktorMonitoringRest
 	public byte[] readText(String name) throws ComputerError
     {
 
+		// --- CREAMOS FLUJOS ---
         FileInputStream fileInputStream = null;
-
         DataInputStream dataInputStream = null;
 
         try
         {
+        	// --- INICIALIZAMOS FLUJOS ---
             fileInputStream = new FileInputStream(name);
-
             dataInputStream = new DataInputStream(fileInputStream);
 
+            // --- RETORNAMOS CON LA LECTURA DE TODOS LOS BYTES ---
             return dataInputStream.readAllBytes();
         } 
+        // --- CAPTURAMOS Y ARROJAMOS EXCEPCION ---
         catch (IOException exception)
         {
             String message = "Error";
@@ -195,6 +210,7 @@ public class ReaktorMonitoringRest
         } 
         finally
         {
+        	//  --- CERRRAMOS TODOS LOS FLUJOS EN EL FINALLY ---
             if (dataInputStream != null)
             {
                 try
@@ -236,8 +252,10 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
+			// --- OBTENEMOS EL MOTHERBOARD CON UN SERIALNUMBER ---
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 			
+			// --- SI EL MOTHERBOARD NO ESTA VACIO ---
 			if (motherboard.isEmpty())
 			{
 				String error = "Incorrect Serial Number";
@@ -245,11 +263,16 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 			
+			// --- CREAMOS EL DATE ---
 			Date date = new Date(dateLong);
 			
+			// --- CREAMOS EL TASK ID ---
 			TaskId taskId = new TaskId(serialNumber, "screenshot", date);
+			
+			// --- BUSCAMOS LA TASK CON EL TASKID ---
 			Optional<Task> task = this.iTaskRepository.findById(taskId);
 			
+			// --- SI EL TASK NO ESTA VACIO ---
 			if (task.isEmpty())
 			{
 				String error = "Incorrect Task ID";
@@ -257,12 +280,17 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 			
+			// --- SACAMOS LA DATE A UN STRING ---
 			String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
 			
+			// --- ESCRIBIMOS ---
 			this.writeText(".\\screenshots\\" + serialNumber + "\\" + finalDate, screenshot.getBytes());
+			
+			// --- RETORNAMOS OK ---
 			return ResponseEntity.ok().build();
 
 		}
+		// --- CAPTURAMOS Y ARROJAMOS ---
 		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
@@ -279,27 +307,30 @@ public class ReaktorMonitoringRest
 	 */
 	public void writeText(String name, byte[] content)
 	{
-
+		// --- CREAMOS FLUJOS ---
 		FileOutputStream fileOutputStream = null;
-
 		DataOutputStream dataOutputStream = null;
 
 		try
 		{
+			// --- INICIALIZAMOS LOS FLUJOS ---
 			fileOutputStream = new FileOutputStream(name);
-
 			dataOutputStream = new DataOutputStream(fileOutputStream);
 
+			// --- ESCRIBIMOS Y HACEMOS FLUSH ---
 			dataOutputStream.write(content);
-
 			dataOutputStream.flush();
 
-		} catch (IOException exception)
+		}
+		// --- CAPTURAMOS Y ARROJAMOS ---
+		catch (IOException exception)
 		{
 			String message = "Error";
 			log.error(message, exception);
-		} finally
+		} 
+		finally
 		{
+			// --- CERRAMOS TODOS LOS FLUJOS EN EL FINALLY ---
 			if (dataOutputStream != null)
 			{
 				try
@@ -351,9 +382,9 @@ public class ReaktorMonitoringRest
 	private boolean chekIfSerialNumberExistBoolean(String serialNumber)
 	{
 		boolean exist = false;
-		for (Computer x : this.computerList)
+		for (Computer computer : this.computerList)
 		{
-			if (x.getSerialNumber().equals(serialNumber))
+			if (computer.getSerialNumber().equals(serialNumber))
 			{
 				exist = true;
 			}
@@ -464,8 +495,10 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
+			// --- OBTENEMOS EL MOTHERBOARD CON EL SERIALNUMBER ---
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 			
+			// --- SI EL MOTHERBOARD NO ES EMPTY ---
 			if (motherboard.isEmpty())
 			{
 				String error = "Incorrect Serial Number";
@@ -473,14 +506,22 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
+			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
 			List<Task> tasks = this.iTaskRepository.findBySerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
 			
+			// --- ORDENAMOS LAS FECHAS ---
 			tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
-			Task task = tasks.get(0);			
+			
+			// --- OBTENEMOS LA PRIMERA TASK ---
+			Task task = tasks.get(0);		
+			
+			// --- CREAMOS TASK DTO---
 			TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
 			
+			// RETORNAMOS
 			return ResponseEntity.ok().body(taskDTO);
 		}
+		// CAPTURAMOS Y ARROJAMOS 
 		catch (Exception exception)
 		{
 			String error = "Server Error";
