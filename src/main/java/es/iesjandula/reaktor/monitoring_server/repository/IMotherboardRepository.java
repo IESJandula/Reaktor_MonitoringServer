@@ -9,7 +9,7 @@ import es.iesjandula.reaktor.models.Motherboard;
 public interface IMotherboardRepository extends JpaRepository<Motherboard, String>
 {
     Motherboard findByMotherBoardSerialNumber(String motherBoardSerialNumber);
-
+    
     List<Motherboard> findByTrolley(String trolley);
     
     List<Motherboard> findByClassroom(String classroom);
@@ -21,4 +21,6 @@ public interface IMotherboardRepository extends JpaRepository<Motherboard, Strin
     List<Motherboard> findByComputerNumber(String computerNumber);
     
     List<Motherboard> findByFloor(int floor);
+    
+    
 }

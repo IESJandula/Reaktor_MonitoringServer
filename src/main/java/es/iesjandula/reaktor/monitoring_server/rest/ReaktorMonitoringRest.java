@@ -2,7 +2,6 @@ package es.iesjandula.reaktor.monitoring_server.rest;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +19,13 @@ import es.iesjandula.reaktor.models.CommandLine;
 import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
+import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Peripheral;
 import es.iesjandula.reaktor.models.Software;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.monitoring.Actions;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,7 +41,7 @@ public class ReaktorMonitoringRest
 {
 	@Autowired
 	ITaskRepository iTaskRepository;
-	
+	IMotherboardRepository iMotherboardRepository;
 	
 	/** Attribute computerList */
 	private List<Computer> computerList = new ArrayList<>(List.of(
@@ -164,7 +165,8 @@ public class ReaktorMonitoringRest
 
 		}
 		catch (Exception exception)
-		{
+		{	
+			iTaskRepository.save(taskStatus);
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
@@ -365,11 +367,12 @@ public class ReaktorMonitoringRest
 	(		
 			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String andaluciaId,
-			@RequestHeader(required = false) String computerNumber,
-			@RequestBody(required = true) Computer computerInstance)
+			@RequestHeader(required = false) String computerNumber)
+			
 	{
 		try
 		{
+			List<Motherboard> motherboardList = new ArrayList<Motherboard>();
 			// --- ONLY ONE PARAMETER BECAUSE ONLY SEND THE STATUS OF ONE COMPUTER AT
 			// THE SAME TIME (FOR SCHELUDED TASK ON CLIENT) ---
 			if ((serialNumber != null) || (andaluciaId != null) || (computerNumber != null))
@@ -383,7 +386,7 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullBySerialNumber(serialNumber, computerInstance);
+					motherboardList.add(this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumber));
 				}
 				else if (andaluciaId != null)
 				{
@@ -394,7 +397,7 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullByAndaluciaId(andaluciaId, computerInstance);
+					motherboardList = this.iMotherboardRepository.findByAndaluciaId(andaluciaId);				
 				}
 				else if (computerNumber != null)
 				{
@@ -405,12 +408,12 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullByComputerNumber(computerNumber, computerInstance);
+					motherboardList = this.iMotherboardRepository.findByComputerNumber(computerNumber);
 				}
 
 				// --- RESPONSE WITH OK , BUT TEMPORALY RESPONSE WITH LIST TO SEE THE CHANGES
 				// ---
-				return ResponseEntity.ok(this.computerList);
+				return ResponseEntity.ok(motherboardList);
 
 			}
 			else
