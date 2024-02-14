@@ -28,6 +28,7 @@ import es.iesjandula.reaktor.models.Computer;
 import es.iesjandula.reaktor.models.Location;
 import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Motherboard;
+import es.iesjandula.reaktor.models.Reaktor;
 import es.iesjandula.reaktor.models.Status;
 import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.DTO.TaskDTO;
@@ -63,12 +64,15 @@ public class ReaktorMonitoringRest
 
 	));
 	
+	/** Attribute IActionRepository*/
 	@Autowired
 	private IActionRepository actionRepository;
 	
+	/** Attribute iMotherboardRepository*/
 	@Autowired
 	private IMotherboardRepository iMotherboardRepository;
 	
+	/** Attribute iTaskRepository*/
 	@Autowired
 	private ITaskRepository iTaskRepository;
 
@@ -162,6 +166,12 @@ public class ReaktorMonitoringRest
 		}
 	}
 	
+	/**
+	 * Method readText to read
+	 * @param name
+	 * @return byte[]
+	 * @throws ComputerError
+	 */
 	public byte[] readText(String name) throws ComputerError
     {
 
@@ -333,6 +343,11 @@ public class ReaktorMonitoringRest
 	}
 
 
+	/**
+	 * Method chekIfSerialNumberExistBoolean
+	 * @param serialNumber
+	 * @return boolean
+	 */
 	private boolean chekIfSerialNumberExistBoolean(String serialNumber)
 	{
 		boolean exist = false;
@@ -353,7 +368,7 @@ public class ReaktorMonitoringRest
 	 * @param serialNumber     the serial number
 	 * @param andaluciaId      the andalucia id
 	 * @param computerNumber   the computer number
-	 * @param computerInstance the computer object instance
+	 * @param reaktorInstance  the reaktor object instance
 	 * @return ResponseEntity response
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/send/fullInfo", consumes = "application/json", produces = "application/json")
@@ -362,7 +377,7 @@ public class ReaktorMonitoringRest
 			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String andaluciaId,
 			@RequestHeader(required = false) String computerNumber,
-			@RequestBody(required = true) Computer computerInstance)
+			@RequestBody(required = true) Reaktor reaktorInstance)
 	{
 		try
 		{
@@ -379,7 +394,10 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullBySerialNumber(serialNumber, computerInstance);
+					// ON SPECIFIC COMPUTER BY serialNumber
+					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumber);
+
+					this.updateMotherboard(reaktorInstance, motherboard);
 				}
 				else if (andaluciaId != null)
 				{
@@ -390,7 +408,14 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullByAndaluciaId(andaluciaId, computerInstance);
+					// ON SPECIFIC COMPUTER BY ANDALUCIA ID
+					List<Motherboard> motherboardList = this.iMotherboardRepository.findByAndaluciaId(andaluciaId);
+
+					for(Motherboard motherboard:motherboardList) 
+					{
+						this.updateMotherboard(reaktorInstance, motherboard);
+					}
+					
 				}
 				else if (computerNumber != null)
 				{
@@ -401,12 +426,15 @@ public class ReaktorMonitoringRest
 						ComputerError computerError = new ComputerError(404, error, null);
 						return ResponseEntity.status(404).body(computerError.toMap());
 					}
-					this.sendFullByComputerNumber(computerNumber, computerInstance);
+					// ON SPECIFIC COMPUTER BY serialNumber
+					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(computerNumber);
+
+					this.updateMotherboard(reaktorInstance, motherboard);
 				}
 
-				// --- RESPONSE WITH OK , BUT TEMPORALY RESPONSE WITH LIST TO SEE THE CHANGES
+				// --- RESPONSE WITH OK , 
 				// ---
-				return ResponseEntity.ok(this.computerList);
+				return ResponseEntity.ok().build();
 
 			}
 			else
@@ -462,60 +490,6 @@ public class ReaktorMonitoringRest
 	}	
 
 	/**
-	 * Method sendFullByComputerNumber
-	 *
-	 * @param computerNumber
-	 * @param computerInstance
-	 */
-	private void sendFullByComputerNumber(String computerNumber, Computer computerInstance)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer listedComputer = this.computerList.get(i);
-			if (listedComputer.getComputerNumber().equalsIgnoreCase(computerNumber))
-			{
-				this.computerList.set(i, computerInstance);
-			}
-		}
-	}
-
-	/**
-	 * Method sendFullByAndaluciaId
-	 *
-	 * @param andaluciaId
-	 * @param computerInstance
-	 */
-	private void sendFullByAndaluciaId(String andaluciaId, Computer computerInstance)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer listedComputer = this.computerList.get(i);
-			if (listedComputer.getAndaluciaID().equalsIgnoreCase(andaluciaId))
-			{
-				this.computerList.set(i, computerInstance);
-			}
-		}
-	}
-
-	/**
-	 * Method sendFullBySerialNumber
-	 *
-	 * @param serialNumber
-	 * @param computerInstance
-	 */
-	private void sendFullBySerialNumber(String serialNumber, Computer computerInstance)
-	{
-		for (int i = 0; i < this.computerList.size(); i++)
-		{
-			Computer listedComputer = this.computerList.get(i);
-			if (listedComputer.getSerialNumber().equalsIgnoreCase(serialNumber))
-			{
-				this.computerList.set(i, computerInstance);
-			}
-		}
-	}
-
-	/**
 	 * Method checkNullEmpty
 	 *
 	 * @param serialNumber
@@ -528,6 +502,37 @@ public class ReaktorMonitoringRest
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * Method to update Motherboard
+	 * 
+	 * @param reaktorInstance
+	 * @param motherboard
+	 */
+	private void updateMotherboard(Reaktor reaktorInstance, Motherboard motherboard)
+	{
+		
+		// --- SE OBTIENE CADA APARTADO NECESARIO PARA GUARDAR EL MOTHERBOARD DESDE EL OBJETO REAKTOR ---
+		motherboard.setAndaluciaId(reaktorInstance.getMotherboard().getAndaluciaId());
+		motherboard.setClassroom(reaktorInstance.getMotherboard().getClassroom());
+		motherboard.setComputerNumber(reaktorInstance.getMotherboard().getComputerNumber());
+		motherboard.setComputerOn(reaktorInstance.getMotherboard().getComputerOn());
+		motherboard.setComputerSerialNumber(reaktorInstance.getMotherboard().getComputerSerialNumber());
+		motherboard.setIsAdmin(reaktorInstance.getMotherboard().getIsAdmin());
+		motherboard.setLastConnection(reaktorInstance.getMotherboard().getLastConnection());
+		motherboard.setLastUpdateComputerOn(reaktorInstance.getMotherboard().getLastUpdateComputerOn());
+		motherboard.setMalware(reaktorInstance.getMotherboard().getMalware());
+		motherboard.setModel(reaktorInstance.getMotherboard().getModel());
+		motherboard.setMotherBoardSerialNumber(reaktorInstance.getMotherboard().getMotherBoardSerialNumber());
+		motherboard.setTasks(reaktorInstance.getMotherboard().getTasks());
+		motherboard.setTeacher(reaktorInstance.getMotherboard().getTeacher());
+		motherboard.setTrolley(reaktorInstance.getMotherboard().getTrolley());
+
+		
+		// --- GUARDAMOS Y HACEMOS FLUSH ---
+		this.iMotherboardRepository.save(motherboard);
+		this.iMotherboardRepository.flush();
 	}
 
 }
