@@ -465,7 +465,7 @@ public class ReaktorMonitoringRest
 			}
 
 			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
-			List<Task> tasks = this.iTaskRepository.findBySerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
+			List<Task> tasks = this.iTaskRepository.findByTaskIdSerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
 			
 			// --- ORDENAMOS LAS FECHAS ---
 			tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));

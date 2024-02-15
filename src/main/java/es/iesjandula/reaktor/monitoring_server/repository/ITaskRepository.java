@@ -10,6 +10,6 @@ import es.iesjandula.reaktor.models.Id.TaskId;
 public interface ITaskRepository extends JpaRepository<Task, TaskId>
 {
 
-	List<Task> findBySerialNumberAndStatus(String serialNumber, String status);
+	List<Task> findByTaskIdSerialNumberAndStatus(String serialNumber, String status);
 	
 }
