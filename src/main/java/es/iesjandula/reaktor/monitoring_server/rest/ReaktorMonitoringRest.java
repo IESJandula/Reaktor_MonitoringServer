@@ -464,9 +464,12 @@ public class ReaktorMonitoringRest
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
+			
+			TaskId taskId = new TaskId();
+			taskId.setSerialNumber(serialNumber);
 
 			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
-			List<Task> tasks = this.iTaskRepository.findBySerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
+			List<Task> tasks = this.iTaskRepository.findByTaskIdAndStatus(taskId, Action.STATUS_TODO);
 			
 			// --- ORDENAMOS LAS FECHAS ---
 			tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
