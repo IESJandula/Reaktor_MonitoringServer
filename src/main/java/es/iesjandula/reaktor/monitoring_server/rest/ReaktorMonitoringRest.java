@@ -1,5 +1,6 @@
 package es.iesjandula.reaktor.monitoring_server.rest;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
@@ -157,7 +158,7 @@ public class ReaktorMonitoringRest
 			}
 			
 			// --- CREAMOS EL IMPUT STREAM ---
-			InputStreamResource outcomeInputStreamResource = new InputStreamResource(new java.io.ByteArrayInputStream(this.readText(taskDTO.getInfo())));
+			InputStreamResource outcomeInputStreamResource = new InputStreamResource(new ByteArrayInputStream(this.readText(taskDTO.getInfo())));
 			
 			// --- RESPONDEMOS CON EL INPUT STREAM ---
 			return ResponseEntity.ok().body(outcomeInputStreamResource);
