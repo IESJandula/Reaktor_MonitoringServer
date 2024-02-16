@@ -365,75 +365,25 @@ public class ReaktorMonitoringRest
 	public ResponseEntity<?> sendFullComputer
 	(		
 			@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String andaluciaId,
-			@RequestHeader(required = false) String computerNumber,
 			@RequestBody(required = true) Reaktor reaktorInstance)
 	{
 		try
 		{
-			// --- ONLY ONE PARAMETER BECAUSE ONLY SEND THE STATUS OF ONE COMPUTER AT
-			// THE SAME TIME (FOR SCHELUDED TASK ON CLIENT) ---
-			if ((serialNumber != null) || (andaluciaId != null) || (computerNumber != null))
+			
+			// --- OBTENEMOS EL MOTHERBOARD CON EL SERIALNUMBER ---
+			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
+			
+			// --- SI EL MOTHERBOARD NO ES EMPTY ---
+			if (motherboard.isEmpty())
 			{
-				if (serialNumber != null)
-				{
-					if (this.checkIsBlankEmpty(serialNumber))
-					{
-						// --- BY SERIAL NUMBER ---
-						String error = "serialNumber is Empty or Blank";
-						ComputerError computerError = new ComputerError(404, error, null);
-						return ResponseEntity.status(404).body(computerError.toMap());
-					}
-					// ON SPECIFIC COMPUTER BY serialNumber
-					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumber);
-
-					this.updateMotherboard(reaktorInstance, motherboard);
-				}
-				else if (andaluciaId != null)
-				{
-					// --- BY ANDALUCIA ID ---
-					if (this.checkIsBlankEmpty(andaluciaId))
-					{
-						String error = "andaluciaId is Empty or Blank";
-						ComputerError computerError = new ComputerError(404, error, null);
-						return ResponseEntity.status(404).body(computerError.toMap());
-					}
-					// ON SPECIFIC COMPUTER BY ANDALUCIA ID
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByAndaluciaId(andaluciaId);
-
-					for(Motherboard motherboard:motherboardList) 
-					{
-						this.updateMotherboard(reaktorInstance, motherboard);
-					}
-					
-				}
-				else if (computerNumber != null)
-				{
-					// --- BY COMPUTER NUMBER ---
-					if (this.checkIsBlankEmpty(computerNumber))
-					{
-						String error = "computerNumber is Empty or Blank";
-						ComputerError computerError = new ComputerError(404, error, null);
-						return ResponseEntity.status(404).body(computerError.toMap());
-					}
-					// ON SPECIFIC COMPUTER BY serialNumber
-					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(computerNumber);
-
-					this.updateMotherboard(reaktorInstance, motherboard);
-				}
-
-				// --- RESPONSE WITH OK , 
-				// ---
-				return ResponseEntity.ok().build();
-
+				String error = "Incorrect Serial Number";
+				ComputerError computerError = new ComputerError(401, error, null);
+				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-			else
-			{
-				// --- ON THIS CASE ALL PARAMETERS ARE BLANK OR EMPTY ---
-				String error = "All Paramaters Empty or Blank";
-				ComputerError computerError = new ComputerError(404, error, null);
-				return ResponseEntity.status(404).body(computerError.toMap());
-			}
+			this.updateMotherboard(reaktorInstance, motherboard.get());
+			
+			log.info("entro to fino");
+			return ResponseEntity.ok().build();
 		}
 		catch (Exception exception)
 		{
@@ -471,25 +421,31 @@ public class ReaktorMonitoringRest
 			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
 			List<Task> tasks = this.iTaskRepository.findByTaskIdAndStatus(taskId, Action.STATUS_TODO);
 			
-			// --- ORDENAMOS LAS FECHAS ---
-			tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+			if (!tasks.isEmpty())
+			{
+				// --- ORDENAMOS LAS FECHAS ---
+				tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+				
+				// --- OBTENEMOS LA PRIMERA TASK ---
+				Task task = tasks.get(0);		
+				
+				// --- CREAMOS TASK DTO---
+				TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
+				
+				// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
+				task.setStatus(Action.STATUS_IN_PROGRESS);
+				// RETORNAMOS
+				return ResponseEntity.ok().body(taskDTO);
+			}
+			log.error("no hay na que hacer");
+			return ResponseEntity.ok().build();
 			
-			// --- OBTENEMOS LA PRIMERA TASK ---
-			Task task = tasks.get(0);		
-			
-			// --- CREAMOS TASK DTO---
-			TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
-			
-			// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
-			task.setStatus(Action.STATUS_IN_PROGRESS);
-			// RETORNAMOS
-			return ResponseEntity.ok().body(taskDTO);
 		}
 		// CAPTURAMOS Y ARROJAMOS 
 		catch (Exception exception)
 		{
 			String error = "Server Error";
-			ComputerError computerError = new ComputerError(404, error, exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}	
