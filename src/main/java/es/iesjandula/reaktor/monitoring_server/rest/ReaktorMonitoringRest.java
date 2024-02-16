@@ -23,6 +23,7 @@ import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.models.Task;
+import es.iesjandula.reaktor.models.Id.TaskId;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -92,7 +93,10 @@ public class ReaktorMonitoringRest
 	@RequestMapping(method = RequestMethod.GET, value = "/get/file")
 	public ResponseEntity<?> getAnyFile(@RequestHeader(required = true) String serialNumber)
 	{
-		List<Task> fileTask = iTaskRepository.findBySerialNumberAndNameAndStatus(serialNumber, "file",
+		TaskId task = new TaskId();
+		task.setSerialNumber(serialNumber);
+		task.setActionName("screenshot");
+		List<Task> fileTask = iTaskRepository.findByTaskIdAndStatus(task,
 				Action.STATUS_TODO);
 		try
 		{
@@ -134,7 +138,10 @@ public class ReaktorMonitoringRest
 	@RequestMapping(method = RequestMethod.GET, value = "/get/screenshot")
 	public ResponseEntity<?> getScreenshotOrder(@RequestHeader(required = true) String serialNumber)
 	{
-		List<Task> screenshotTask = iTaskRepository.findBySerialNumberAndNameAndStatus(serialNumber, "screenshot",
+		TaskId task = new TaskId();
+		task.setSerialNumber(serialNumber);
+		task.setActionName("screenshot");
+		List<Task> screenshotTask = iTaskRepository.findByTaskIdAndStatus(task,
 				Action.STATUS_TODO);
 		try
 		{
@@ -365,8 +372,9 @@ public class ReaktorMonitoringRest
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-
-			taskList = iTaskRepository.findBySerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
+			TaskId task = new TaskId();
+			task.setSerialNumber(serialNumber);
+			taskList = iTaskRepository.findByTaskIdAndStatus(task, Action.STATUS_TODO);
 
 			taskList.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
 			taskList.get(0).setStatus(Action.STATUS_IN_PROGRESS);
