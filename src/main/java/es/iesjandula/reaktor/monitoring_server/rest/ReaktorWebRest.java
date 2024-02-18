@@ -9,23 +9,14 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.protobuf.Option;
-
 import es.iesjandula.reaktor.exceptions.ComputerError;
-import es.iesjandula.reaktor.models.CommandLine;
-import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.HardwareComponent;
-import es.iesjandula.reaktor.models.Location;
-import es.iesjandula.reaktor.models.MonitorizationLog;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -41,26 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReaktorWebRest
 {
-	/** Attribute computerList */
-	private List<Computer> computerList = new ArrayList<>(List.of(
-			new Computer("sn123", "and123", "cn123", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn1234", "and1234", "cn12344", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123434231423423", "and12355", "cn123455", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123556", "and123556", "cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123777", "and123777", "cn1234777", "windows", "paco", new Location("0.9", 0, "trolley3"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog())
-
-	));
-
 	@Autowired
 	private IMotherboardRepository iMotherboardRepository;
 

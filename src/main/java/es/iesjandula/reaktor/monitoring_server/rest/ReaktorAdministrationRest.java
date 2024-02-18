@@ -135,7 +135,8 @@ public class ReaktorAdministrationRest
 
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			} 
+			else
 			{
 				// COMMANDS RUN ON ALL COMPUTERS
 				this.addByAll(commands);
@@ -148,7 +149,8 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		} 
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);

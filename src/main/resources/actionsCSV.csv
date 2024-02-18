@@ -1,0 +1,13 @@
+name,commandWindows,commandLinux
+updateAndaluciaId,,
+updateComputerNumber,,
+updateSerialNumber,,
+screenshot,,
+blockDisp,,
+configWifi,netsh wlan add profile filename="INFO_INFO",
+downloadFile,,
+shutdown,shutdown -s -t 61,
+restart,shutdown -r -t 61,
+openWeb,start chrome INFO_INFO,
+installApp,winget install INFO_INFO --silent --accept-package-agreements --accept-source-agreements --force,
+uninstallApp,winget uninstall --id INFO_INFO --silent --force,

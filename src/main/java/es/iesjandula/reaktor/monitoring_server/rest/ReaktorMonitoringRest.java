@@ -370,32 +370,7 @@ public class ReaktorMonitoringRest
 	(		
 			@RequestHeader(required = false) String serialNumber,
 			@RequestBody(required = true) Reaktor reaktorInstance)
-	{
-//		try
-//		{
-//			
-//			// --- OBTENEMOS EL MOTHERBOARD CON EL SERIALNUMBER ---
-//			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
-//			
-//			// --- SI EL MOTHERBOARD NO ES EMPTY ---
-//			if (motherboard.isEmpty())
-//			{
-//				String error = "Incorrect Serial Number";
-//				ComputerError computerError = new ComputerError(401, error, null);
-//				return ResponseEntity.status(401).body(computerError.toMap());
-//			}
-//			this.updateMotherboard(reaktorInstance, motherboard.get());
-//			
-//			log.info("entro to fino");
-//			return ResponseEntity.ok().build();
-//		}
-//		catch (Exception exception)
-//		{
-//			String error = "Server Error";
-//			ComputerError computerError = new ComputerError(404, error, exception);
-//			return ResponseEntity.status(500).body(computerError.toMap());
-//		}
-		
+	{	
 		log.info("Receiving information from reaktor {}", reaktorInstance);
         this.reaktorActions.saveReaktor(reaktorInstance);
         return ResponseEntity.ok("Reaktor Server is running");
