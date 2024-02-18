@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +66,116 @@ public class ReaktorAdministrationRest
 	@Autowired
 	private IActionRepository iActionRepository;
 
+	/**
+	 * Method postComputerCommandLine
+	 * @param serialNumber
+	 * @param wifiFile
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/admin/wifiCfg")
+	public ResponseEntity<?> postWifiCfg(
+			@RequestHeader(required = true) String serialNumber,
+			@RequestHeader(required = true) String wifiFileName)
+	{
+		try
+		{
+			// --- GETTING THE COMMAND BLOCK ----
+			Set<Motherboard> commands = new HashSet<Motherboard>();
+
+			String methodsUsed = "";
+
+			// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
+			if (this.checkEmptys(serialNumber, "_", "_", "_"))
+			{
+				String error = "Any Paramater Is Empty or Blank";
+				ComputerError computerError = new ComputerError(404, error, null);
+				return ResponseEntity.status(404).body(computerError.toMap());
+			}
+
+			if (serialNumber != null)
+			{
+				// ALL COMMANDS ON SPECIFIC COMPUTER BY serialNumber
+				this.addBySerialNumber(serialNumber, commands);
+				methodsUsed += "serialNumber,";
+			}
+			log.info("Parameters Used: " + methodsUsed);
+
+			Optional<Action> actionId = this.iActionRepository.findById("configWifi");
+
+			if (actionId.isPresent())
+			{
+				this.addTasks(commands, actionId.get(), "./confWIFI/"+wifiFileName);
+			}
+
+			// --- RETURN OK RESPONSE ---
+			return ResponseEntity.ok().build();
+			
+		}
+		catch (Exception exception)
+		{
+			String error = "Error on openWeb admin";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
+			return ResponseEntity.status(500).body(computerError.toMap());
+		}
+
+	}
+	/**
+	 * Method postComputerCommandLine
+	 * @param serialNumber
+	 * @param webURL
+	 * @return
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/admin/chrome/openWeb")
+	public ResponseEntity<?> postOpenWeb(
+			@RequestHeader(required = true) String serialNumber,
+			@RequestHeader(required = true) String webURL)
+	{
+		try
+		{
+			// --- GETTING THE COMMAND BLOCK ----
+			Set<Motherboard> commands = new HashSet<Motherboard>();
+
+			String methodsUsed = "";
+
+			// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
+			if (this.checkEmptys(serialNumber, "_", "_", "_"))
+			{
+				String error = "Any Paramater Is Empty or Blank";
+				ComputerError computerError = new ComputerError(404, error, null);
+				return ResponseEntity.status(404).body(computerError.toMap());
+			}
+
+			if (serialNumber != null)
+			{
+				// ALL COMMANDS ON SPECIFIC COMPUTER BY serialNumber
+				this.addBySerialNumber(serialNumber, commands);
+				methodsUsed += "serialNumber,";
+			}
+			log.info("Parameters Used: " + methodsUsed);
+
+			Optional<Action> actionId = this.iActionRepository.findById("openWeb");
+
+			if (actionId.isPresent())
+			{
+				this.addTasks(commands, actionId.get(), webURL);
+			}
+
+			// --- RETURN OK RESPONSE ---
+			return ResponseEntity.ok().build();
+			
+		}
+		catch (Exception exception)
+		{
+			String error = "Error on openWeb admin";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
+			return ResponseEntity.status(500).body(computerError.toMap());
+		}
+
+	}
+	
+	
 	/**
 	 * Method sendInformation to send information of commands to computers
 	 *
@@ -490,9 +599,11 @@ public class ReaktorAdministrationRest
 	 * @param softwareInstance
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/admin/software", consumes = "application/json")
-	public ResponseEntity<?> sendSoftware(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
+	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
+	public ResponseEntity<?> sendSoftware(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String professor,
 			@RequestHeader(required = true) String software)
 	{
 		try
@@ -572,10 +683,12 @@ public class ReaktorAdministrationRest
 	 * @param softwareInstance
 	 * @return
 	 */
-	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software", consumes = "application/json")
-	public ResponseEntity<?> unistallSoftware(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
-			@RequestBody(required = true) String software)
+	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
+	public ResponseEntity<?> unistallSoftware(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String professor,
+			@RequestHeader(required = true) String software)
 	{
 		try
 		{
