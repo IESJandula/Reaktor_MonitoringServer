@@ -77,10 +77,10 @@ public class ReaktorAdministrationRest
 	 * @param commandLine  the commnadLine Object
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(method = RequestMethod.POST, value = "/admin/commandLine", consumes = "application/json")
+	@RequestMapping(method = RequestMethod.POST, value = "/admin/commandLine")
 	public ResponseEntity<?> postComputerCommandLine(@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer floor, @RequestBody(required = true) String commandLine)
+			@RequestHeader(required = false) Integer floor, @RequestHeader(required = true) String commandLine)
 	{
 		try
 		{
@@ -135,7 +135,7 @@ public class ReaktorAdministrationRest
 
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} 
+			}
 			else
 			{
 				// COMMANDS RUN ON ALL COMPUTERS
@@ -149,7 +149,7 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} 
+		}
 		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
@@ -223,7 +223,8 @@ public class ReaktorAdministrationRest
 				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// SHUTDOWN ALL COMPUTERS
 				this.addByAll(shutdownList);
@@ -236,7 +237,8 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -305,7 +307,8 @@ public class ReaktorAdministrationRest
 				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				this.addByAll(restartList);
 				Optional<Action> actionId = this.iActionRepository.findById("restart");
@@ -317,7 +320,8 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -378,7 +382,8 @@ public class ReaktorAdministrationRest
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// ON ALL COMPUTERS
 				List<Motherboard> list = this.iMotherboardRepository.findAll();
@@ -394,7 +399,8 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -411,7 +417,7 @@ public class ReaktorAdministrationRest
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/screenshot")
 	public ResponseEntity<?> sendScreenshotOrder(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley)
+			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String serialNumber)
 	{
 		try
 		{
@@ -423,13 +429,17 @@ public class ReaktorAdministrationRest
 				String methodsUsed = "";
 
 				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys("_", "_", classroom, trolley))
+				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
 				{
 					String error = "Any Paramater Is Empty or Blank";
 					ComputerError computerError = new ComputerError(404, error, null);
 					return ResponseEntity.status(404).body(computerError.toMap());
 				}
-
+				if (serialNumber != null)
+				{
+					this.addBySerialNumber(serialNumber, screenshotList);
+					methodsUsed += "serialNumber,";
+				}
 				if (trolley != null)
 				{
 					this.addByTrolley(trolley, screenshotList);
@@ -450,7 +460,8 @@ public class ReaktorAdministrationRest
 				}
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				this.addByAll(screenshotList);
 				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
@@ -462,7 +473,8 @@ public class ReaktorAdministrationRest
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -528,7 +540,8 @@ public class ReaktorAdministrationRest
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// ON ALL COMPUTERS
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
@@ -541,7 +554,8 @@ public class ReaktorAdministrationRest
 				}
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -609,7 +623,8 @@ public class ReaktorAdministrationRest
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// ON ALL COMPUTERS
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
@@ -622,7 +637,8 @@ public class ReaktorAdministrationRest
 				}
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -696,14 +712,16 @@ public class ReaktorAdministrationRest
 				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// ALL COMPUTERS
 				String error = "No parameters selected";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage());
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -845,9 +863,13 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
-	public ResponseEntity<?> postComputerExecFile(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer floor, @RequestBody(required = true) MultipartFile execFile)
+	public ResponseEntity<?> postComputerExecFile(
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley,
+			@RequestHeader(required = false) Integer floor,
+			@RequestHeader(required = true) String fileName,
+			@RequestBody(required = true) MultipartFile execFile)
 	{
 		try
 		{
@@ -888,16 +910,17 @@ public class ReaktorAdministrationRest
 				}
 				// --- RETURN OK RESPONSE ---
 
-				this.writeText(Constants.FILE_FOLDER + execFile.getName(), execFile.getBytes());
+				this.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
 				Optional<Action> actionId = this.iActionRepository.findById("file");
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + execFile.getName());
+					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName);
 				}
 
 				return ResponseEntity.ok().build();
-			} else
+			}
+			else
 			{
 				// COMMANDS RUN ON ALL COMPUTERS
 				this.addByAll(fileList);
@@ -909,7 +932,8 @@ public class ReaktorAdministrationRest
 				}
 				return ResponseEntity.ok().build();
 			}
-		} catch (Exception exception)
+		}
+		catch (Exception exception)
 		{
 			log.error(exception.getMessage(), exception);
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
@@ -941,18 +965,21 @@ public class ReaktorAdministrationRest
 
 			dataOutputStream.flush();
 
-		} catch (IOException exception)
+		}
+		catch (IOException exception)
 		{
 			String message = "Error";
 			log.error(message, exception);
-		} finally
+		}
+		finally
 		{
 			if (dataOutputStream != null)
 			{
 				try
 				{
 					dataOutputStream.close();
-				} catch (IOException exception)
+				}
+				catch (IOException exception)
 				{
 					String message = "Error";
 					log.error(message, exception);
@@ -964,7 +991,8 @@ public class ReaktorAdministrationRest
 				try
 				{
 					fileOutputStream.close();
-				} catch (IOException exception)
+				}
+				catch (IOException exception)
 				{
 					String message = "Error";
 					log.error(message, exception);
@@ -1013,10 +1041,12 @@ public class ReaktorAdministrationRest
 				File zipFile = this.getZipFile(classroom, trolley);
 			}
 			return ResponseEntity.ok().build();
-		} catch (ComputerError error)
+		}
+		catch (ComputerError error)
 		{
 			return ResponseEntity.status(400).body(error.getMessage());
-		} catch (Exception error)
+		}
+		catch (Exception error)
 		{
 			return ResponseEntity.status(500).body(error.getMessage());
 		}
