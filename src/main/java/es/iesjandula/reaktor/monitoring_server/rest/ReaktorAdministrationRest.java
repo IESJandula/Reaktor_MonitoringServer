@@ -68,13 +68,13 @@ public class ReaktorAdministrationRest
 
 	/**
 	 * Method postComputerCommandLine
+	 * 
 	 * @param serialNumber
 	 * @param wifiFile
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/wifiCfg")
-	public ResponseEntity<?> postWifiCfg(
-			@RequestHeader(required = true) String serialNumber,
+	public ResponseEntity<?> postWifiCfg(@RequestHeader(required = true) String serialNumber,
 			@RequestHeader(required = true) String wifiFileName)
 	{
 		try
@@ -104,31 +104,32 @@ public class ReaktorAdministrationRest
 
 			if (actionId.isPresent())
 			{
-				this.addTasks(commands, actionId.get(), "./confWIFI/"+wifiFileName);
+				this.addTasks(commands, actionId.get(), "./confWIFI/" + wifiFileName);
 			}
 
 			// --- RETURN OK RESPONSE ---
 			return ResponseEntity.ok().build();
-			
+
 		}
 		catch (Exception exception)
 		{
 			String error = "Error on openWeb admin";
-			log.error(error,exception);
+			log.error(error, exception);
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 
 	}
+
 	/**
 	 * Method postComputerCommandLine
+	 * 
 	 * @param serialNumber
 	 * @param webURL
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/chrome/openWeb")
-	public ResponseEntity<?> postOpenWeb(
-			@RequestHeader(required = true) String serialNumber,
+	public ResponseEntity<?> postOpenWeb(@RequestHeader(required = true) String serialNumber,
 			@RequestHeader(required = true) String webURL)
 	{
 		try
@@ -156,26 +157,27 @@ public class ReaktorAdministrationRest
 
 			Optional<Action> actionId = this.iActionRepository.findById("openWeb");
 
+			// --- SI EL ACTION EXISTE , CREAREMOS LAS NUEVAS TASK---
 			if (actionId.isPresent())
 			{
+				// -- -CREAMOS TASKS ---
 				this.addTasks(commands, actionId.get(), webURL);
 			}
 
 			// --- RETURN OK RESPONSE ---
 			return ResponseEntity.ok().build();
-			
+
 		}
 		catch (Exception exception)
 		{
 			String error = "Error on openWeb admin";
-			log.error(error,exception);
+			log.error(error, exception);
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 
 	}
-	
-	
+
 	/**
 	 * Method sendInformation to send information of commands to computers
 	 *
@@ -388,30 +390,37 @@ public class ReaktorAdministrationRest
 
 				if (serialNumber != null)
 				{
+					// ADD  BY SERIAL NUMBER
 					this.addBySerialNumber(serialNumber, restartList);
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
 				{
+					// ADD BY TROLLEY
 					this.addByTrolley(trolley, restartList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
+					// ADD BY CLASSROOM 
 					this.addByClassroom(classroom, restartList);
 					methodsUsed += "classroom,";
 				}
 				if (floor != null)
 				{
+					// ADD BY FLOOR
 					this.addByFloor(floor, restartList);
 					methodsUsed += "floor,";
 				}
 				log.info("Parameters Used: " + methodsUsed);
 
+				// -- SACAMOS EL ACTIONS ---
 				Optional<Action> actionId = this.iActionRepository.findById("restart");
 
+				// -- -SI EL ACTION EXISTE CREAMOS TASKS --
 				if (actionId.isPresent())
 				{
+					// CREAMOS TASKS
 					this.addTasks(restartList, actionId.get(), "");
 				}
 				// --- RETURN OK RESPONSE ---
@@ -419,11 +428,16 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
+				// EN CASO DE TODOS , PONDREMOS ADD BY ALL 
 				this.addByAll(restartList);
+				
+				// MISMOS PASOS QUE ANTES , BUSCAMOS ACCION Y SI EXISTE LA PONDREMOS
 				Optional<Action> actionId = this.iActionRepository.findById("restart");
 
+				// COMPROBACION
 				if (actionId.isPresent())
 				{
+					// CREAMOS
 					this.addTasks(restartList, actionId.get(), "");
 				}
 				log.info("By all Computers");
@@ -481,10 +495,13 @@ public class ReaktorAdministrationRest
 					methodsUsed += "classroom,";
 				}
 
+				// BUSCAMOS LA ACCION
 				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
 
+				// SI EXISTE LA ACCION
 				if (action.isPresent())
 				{
+					// CREAMOS LAS TAREAS
 					this.addTasks(motherboardList, action.get(), usb.getId().toString());
 				}
 
@@ -498,10 +515,13 @@ public class ReaktorAdministrationRest
 				List<Motherboard> list = this.iMotherboardRepository.findAll();
 				motherboardList.addAll(list);
 
+				// BUSCAMOS LA ACCION
 				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
 
+				// SI EXISTE 
 				if (action.isPresent())
 				{
+					// CREAMOS LAS TAREAS
 					this.addTasks(motherboardList, action.get(), usb.getId().toString());
 				}
 
@@ -546,25 +566,31 @@ public class ReaktorAdministrationRest
 				}
 				if (serialNumber != null)
 				{
+					// ADD BY SERIALNUMBER
 					this.addBySerialNumber(serialNumber, screenshotList);
 					methodsUsed += "serialNumber,";
 				}
 				if (trolley != null)
 				{
+					// ADD BY TROLLEY
 					this.addByTrolley(trolley, screenshotList);
 					methodsUsed += "trolley,";
 				}
 				if (classroom != null)
 				{
+					// ADD BY CLASSROOM
 					this.addByClassroom(classroom, screenshotList);
 					methodsUsed += "classroom,";
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
+				// BUSCAMOS LA ACCION
 				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
 
+				// SI EXISTE
 				if (actionId.isPresent())
 				{
+					// CREAMOS LAS TAREAS
 					this.addTasks(screenshotList, actionId.get(), "");
 				}
 				// --- RETURN OK RESPONSE ---
@@ -572,11 +598,16 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
+				// CASO DE TODOS LOS EQUIPOS
 				this.addByAll(screenshotList);
+				
+				// BUSCAMOS ACCION
 				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
 
+				// SI EXISTE
 				if (actionId.isPresent())
 				{
+					// CREAMOS TAREAS
 					this.addTasks(screenshotList, actionId.get(), "");
 				}
 				log.info("By all Computers");
@@ -600,10 +631,8 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
-	public ResponseEntity<?> sendSoftware(
-			@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, 
-			@RequestHeader(required = false) String professor,
+	public ResponseEntity<?> sendSoftware(@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
 			@RequestHeader(required = true) String software)
 	{
 		try
@@ -642,9 +671,12 @@ public class ReaktorAdministrationRest
 					methodsUsed += "classroom,";
 				}
 
+				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById("install");
+				// SI EXISTE
 				if (!action.isEmpty())
 				{
+					// CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
 				}
 
@@ -658,9 +690,13 @@ public class ReaktorAdministrationRest
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
 				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
+				
+				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById("install");
+				// SI EXISTE
 				if (!action.isEmpty())
 				{
+					// CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
 				}
 				return ResponseEntity.ok().build();
@@ -684,10 +720,8 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
-	public ResponseEntity<?> unistallSoftware(
-			@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, 
-			@RequestHeader(required = false) String professor,
+	public ResponseEntity<?> unistallSoftware(@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
 			@RequestHeader(required = true) String software)
 	{
 		try
@@ -727,9 +761,13 @@ public class ReaktorAdministrationRest
 					motherboardSet.addAll(motherboardList);
 					methodsUsed += "classroom,";
 				}
+				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById("uninstall");
+				
+				//SI EXISTE
 				if (!action.isEmpty())
 				{
+					//CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
 				}
 
@@ -850,6 +888,7 @@ public class ReaktorAdministrationRest
 	 */
 	private void updateMotherboard(Reaktor reaktorInstance, Motherboard motherboard)
 	{
+		// --- ACTUALIZAMOS EL PC COMPLETO OBTENIENDO CADA DATO DEL MOTHERBOARD ---
 		motherboard.setAndaluciaId(reaktorInstance.getMotherboard().getAndaluciaId());
 		motherboard.setClassroom(reaktorInstance.getMotherboard().getClassroom());
 		motherboard.setComputerNumber(reaktorInstance.getMotherboard().getComputerNumber());
@@ -865,6 +904,7 @@ public class ReaktorAdministrationRest
 		motherboard.setTeacher(reaktorInstance.getMotherboard().getTeacher());
 		motherboard.setTrolley(reaktorInstance.getMotherboard().getTrolley());
 
+		// --- GUARDAMOS EL MOTHERBOARD Y HACEMOS FLUSH ---
 		this.iMotherboardRepository.save(motherboard);
 		this.iMotherboardRepository.flush();
 	}
@@ -976,12 +1016,9 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
-	public ResponseEntity<?> postComputerExecFile(
-			@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer floor,
-			@RequestHeader(required = true) String fileName,
+	public ResponseEntity<?> postComputerExecFile(@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
+			@RequestHeader(required = false) Integer floor, @RequestHeader(required = true) String fileName,
 			@RequestBody(required = true) MultipartFile execFile)
 	{
 		try
@@ -1023,11 +1060,16 @@ public class ReaktorAdministrationRest
 				}
 				// --- RETURN OK RESPONSE ---
 
+				// --- RECOGEMOS EL FICHERO QUE NOS MANDAN Y LO GUARDAMOS EN LA CARPETA FILES
 				this.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
+				
+				// BUSCAMOS ACCION
 				Optional<Action> actionId = this.iActionRepository.findById("file");
 
+				// SI EXISTE
 				if (actionId.isPresent())
 				{
+					// CREAMOS ACCION CON LA RUTA DEL FICHERO
 					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName);
 				}
 
@@ -1063,19 +1105,19 @@ public class ReaktorAdministrationRest
 	 */
 	public void writeText(String name, byte[] content)
 	{
-
+		// DELCARAMOS FLUJOS
 		FileOutputStream fileOutputStream = null;
-
 		DataOutputStream dataOutputStream = null;
 
 		try
 		{
+			// CREAMOS LOS FLUJOS
 			fileOutputStream = new FileOutputStream(name);
-
 			dataOutputStream = new DataOutputStream(fileOutputStream);
-
+			
+			// GUARDAMOS EL FICHERO
 			dataOutputStream.write(content);
-
+			// HACEMOS FLUSH
 			dataOutputStream.flush();
 
 		}
@@ -1273,22 +1315,37 @@ public class ReaktorAdministrationRest
 	 */
 	private void addTasks(Set<Motherboard> motherboardList, Action action, String info)
 	{
+		// SACAMOS LA FECHA ACTUAL
 		Date date = new Date();
+		
+		// --- POR CADA PC EN LA LISTA , CREAREMOS SU TAREA ---
 		for (Motherboard motherboard : motherboardList)
 		{
+			// -- -CREAMOS LA TASK ---
 			Task task = new Task();
+			// --- CREAMOS LA ID DE LA TASK --
 			TaskId taskId = new TaskId();
 
+			// --- PONEMOS EL NOMBRE DE LA ACCION (TASK)---
 			taskId.setActionName(action.getName());
+			
+			// --- PONEMOS LA DATE ---
 			taskId.setDate(date);
+			
+			// --- PONEMOS EL SERIALNUMBER ---
 			taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());
 
+			// ARMAMOS EL TASK CON TODO LO ANTERIOR ---
 			task.setTaskId(taskId);
 			task.setAction(action);
 			task.setMotherboard(motherboard);
+			// --- PONEMOS EL INFO NECESARIO
 			task.setInfo(info);
+			
+			// PONEMOS EN ESTADO DE TODO
 			task.setStatus(Action.STATUS_TODO);
 
+			// --- GUARDAMOS ---
 			this.iTaskRepository.saveAndFlush(task);
 		}
 	}
