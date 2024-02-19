@@ -807,9 +807,11 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.PUT, value = "/computer/edit", consumes = "application/json")
-	public ResponseEntity<?> updateComputer(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String andaluciaId, @RequestHeader(required = false) String computerNumber,
-			@RequestBody(required = true) Reaktor reaktorInstance)
+	public ResponseEntity<?> updateComputer(
+			@RequestHeader(required = false) String serialNumberMotherboard,
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String andaluciaId, 
+			@RequestHeader(required = false) String computerNumber)
 	{
 		try
 		{
@@ -829,7 +831,7 @@ public class ReaktorAdministrationRest
 				if (serialNumber != null)
 				{
 					// ON SPECIFIC COMPUTER BY serialNumber
-					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumber);
+					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumberMotherboard);
 
 					this.updateMotherboard(reaktorInstance, motherboard);
 
@@ -880,34 +882,7 @@ public class ReaktorAdministrationRest
 		}
 	}
 
-	/**
-	 * Method to update Motherboard
-	 * 
-	 * @param reaktorInstance
-	 * @param motherboard
-	 */
-	private void updateMotherboard(Reaktor reaktorInstance, Motherboard motherboard)
-	{
-		// --- ACTUALIZAMOS EL PC COMPLETO OBTENIENDO CADA DATO DEL MOTHERBOARD ---
-		motherboard.setAndaluciaId(reaktorInstance.getMotherboard().getAndaluciaId());
-		motherboard.setClassroom(reaktorInstance.getMotherboard().getClassroom());
-		motherboard.setComputerNumber(reaktorInstance.getMotherboard().getComputerNumber());
-		motherboard.setComputerOn(reaktorInstance.getMotherboard().getComputerOn());
-		motherboard.setComputerSerialNumber(reaktorInstance.getMotherboard().getComputerSerialNumber());
-		motherboard.setIsAdmin(reaktorInstance.getMotherboard().getIsAdmin());
-		motherboard.setLastConnection(reaktorInstance.getMotherboard().getLastConnection());
-		motherboard.setLastUpdateComputerOn(reaktorInstance.getMotherboard().getLastUpdateComputerOn());
-		motherboard.setMalware(reaktorInstance.getMotherboard().getMalware());
-		motherboard.setModel(reaktorInstance.getMotherboard().getModel());
-		motherboard.setMotherBoardSerialNumber(reaktorInstance.getMotherboard().getMotherBoardSerialNumber());
-		motherboard.setTasks(reaktorInstance.getMotherboard().getTasks());
-		motherboard.setTeacher(reaktorInstance.getMotherboard().getTeacher());
-		motherboard.setTrolley(reaktorInstance.getMotherboard().getTrolley());
-
-		// --- GUARDAMOS EL MOTHERBOARD Y HACEMOS FLUSH ---
-		this.iMotherboardRepository.save(motherboard);
-		this.iMotherboardRepository.flush();
-	}
+	
 
 	/**
 	 * Method checkEmptyIds

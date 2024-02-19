@@ -282,10 +282,10 @@ public class ReaktorMonitoringRest
 			}
 
 			// --- SACAMOS LA DATE A UN STRING ---
-			String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
+			//String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
 
 			// --- MONTAMOS EL NOMBRE / RUTA QUE TENDRA EL EL SCREENSHOT ---
-			String fileName = "./screenshots/screen_" + serialNumber + "_" + finalDate + ".png";
+			String fileName = "./screenshots/screen_" + serialNumber + "_" + date.toString() + ".png";
 			File file = new File(fileName);
 			String absolutePath = file.getAbsolutePath();
 
@@ -426,21 +426,13 @@ public class ReaktorMonitoringRest
 			TaskId taskId = new TaskId();
 			taskId.setSerialNumber(serialNumber);
 
-			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
-			// List<Task> tasks = this.iTaskRepository.findByTaskIdAndStatus(taskId,Action.STATUS_TODO);
-			// log.info(tasks.toString());
-			// log.info(tasks2.toString());
-			// log.info(tasks.toString());
-
-			// -- OBTENEMOS TODAS LAS TAKS Y FILTRAMOS POR STATUS_TODO ---
-			// JPA APARENTEMENTE DA ERROR CON LO COMENTADO EN LAS LINEAS DE ARRIBA , SE HAN DEJADO PARA SU ALANISIS EN CLASE
-			List<Task> allTasks = this.iTaskRepository.findAll();
+			List<Task> allTasks = this.iTaskRepository.findByStatus(Action.STATUS_TODO);
 			List<Task> tasks = new ArrayList<Task>();
 
 			// FILTRAMOS
 			for (Task tmpTask : allTasks)
 			{
-				if (tmpTask.getStatus().equals(Action.STATUS_TODO))
+				if (tmpTask.getTaskId().getSerialNumber().equals(serialNumber))
 				{
 					tasks.add(tmpTask);
 				}
