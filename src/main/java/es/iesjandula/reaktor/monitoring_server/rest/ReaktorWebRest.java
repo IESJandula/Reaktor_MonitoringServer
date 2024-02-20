@@ -5,23 +5,20 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;
-import es.iesjandula.reaktor.models.CommandLine;
-import es.iesjandula.reaktor.models.Computer;
-import es.iesjandula.reaktor.models.HardwareComponent;
-import es.iesjandula.reaktor.models.Location;
-import es.iesjandula.reaktor.models.MonitorizationLog;
+import es.iesjandula.reaktor.models.Motherboard;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -35,26 +32,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ReaktorWebRest
 {
-	/** Attribute computerList */
-	private List<Computer> computerList = new ArrayList<>(List.of(
-			new Computer("sn123", "and123", "cn123", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn1234", "and1234", "cn12344", "windows", "paco", new Location("0.5", 0, "trolley1"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123434231423423", "and12355", "cn123455", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123556", "and123556", "cn1234556", "windows", "paco", new Location("0.7", 0, "trolley2"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog()),
-			new Computer("sn123777", "and123777", "cn1234777", "windows", "paco", new Location("0.9", 0, "trolley3"),
-					new ArrayList<>(), new ArrayList<>(), new CommandLine(),
-					new MonitorizationLog())
-
-	));
-
+	@Autowired
+	private IMotherboardRepository iMotherboardRepository;
 
 	/**
 	 * Method getComputersByAny
@@ -63,7 +42,7 @@ public class ReaktorWebRest
 	 * @param computerNumber
 	 * @param classroom
 	 * @param trolley
-	 * @param plant
+	 * @param floor
 	 * @param professor
 	 * @param hardwareList
 	 * @return ResponseEntity
@@ -75,51 +54,47 @@ public class ReaktorWebRest
 			@RequestHeader(required = false) String computerNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer plant,
-			@RequestHeader(required = false) String professor,
-			@RequestBody(required = false) List<HardwareComponent> hardwareList
+			@RequestHeader(required = false) Integer floor,
+			@RequestHeader(required = false) String professor
 			)
 	{
 		try
 		{
 			// --- EMPTY LIST ---
-			List<Computer> computerFilterList = new ArrayList<>();
+			List<Motherboard> list = new ArrayList<>();
 
 			// --- BY SERIAL NUMBER ---
-			this.getBySerialNumber(serialNumber, computerFilterList);
+			this.getBySerialNumber(serialNumber, list);
 
 			// --- BY andaluciaId---
-			this.getByAndaluciaId(andaluciaId, computerFilterList);
+			this.getByAndaluciaId(andaluciaId, list);
 
 			// --- BY computerNumber---
-			this.getByComputerNumber(computerNumber, computerFilterList);
+			this.getByComputerNumber(computerNumber, list);
 
 			// --- BY classroom---
-			this.getByClassroom(classroom, computerFilterList);
+			this.getByClassroom(classroom, list);
 
 			// --- BY trolley---
-			this.getByTrolley(trolley, computerFilterList);
+			this.getByTrolley(trolley, list);
 
-			// --- BY plant---
-			this.getByPlant(plant, computerFilterList);
+			// --- BY floor---
+			this.getByFloor(floor, list);
 
 			// --- BY professor---
-			this.getByProfessor(professor, computerFilterList);
-
-			// --- BY hardwareList---
-			this.getByHardwareList(hardwareList, computerFilterList);
+			this.getByProfessor(professor, list);
 			
-			log.info(computerFilterList.toString());
+			log.info(list.toString());
 			
 			// --- 400 ERROR ---
-			if(computerFilterList.isEmpty()) 
+			if(list.isEmpty()) 
 			{
 				String error = "Error no hay conincidencias";
 				ComputerError computerError = new ComputerError(400, error, null);
 				return ResponseEntity.status(400).body(computerError);
 			}
 
-			return ResponseEntity.ok(computerFilterList);
+			return ResponseEntity.ok(list);
 		}
 		catch(Exception exception)
 		{
@@ -132,64 +107,29 @@ public class ReaktorWebRest
 
 
 	/**
-	 * Method getByHardwareList
-	 * @param hardwareList
-	 * @param computerFilterList
-	 */
-	private void getByHardwareList(List<HardwareComponent> hardwareList, List<Computer> computerFilterList)
-	{
-		if((hardwareList!=null) && (hardwareList.size()>0))
-		{
-			for(Computer computer : this.computerList)
-			{
-				for(HardwareComponent computerComponent : computer.getHardwareList())
-				{
-					if(hardwareList.contains(computerComponent))
-					{
-						computerFilterList.add(computer);
-					}
-				}
-			}
-		}
-	}
-
-
-	/**
 	 * Method getByProfessor
 	 * @param professor
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getByProfessor(String professor, List<Computer> computerFilterList)
+	private void getByProfessor(String professor, List<Motherboard> list)
 	{
 		if((professor!=null) && !professor.isBlank() && !professor.isEmpty())
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getProfessor().equals(professor))
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByTeacher(professor));
 		}
 	}
 
 
 	/**
-	 * Method getByPlant
-	 * @param plant
-	 * @param computerFilterList
+	 * Method getByFloor
+	 * @param floor
+	 * @param list
 	 */
-	private void getByPlant(Integer plant, List<Computer> computerFilterList)
+	private void getByFloor(Integer floor, List<Motherboard> list)
 	{
-		if(plant!=null)
+		if(floor!=null)
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getLocation().getPlant()==plant)
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByFloor(floor));
 		}
 	}
 
@@ -197,19 +137,13 @@ public class ReaktorWebRest
 	/**
 	 * Method getByTrolley
 	 * @param trolley
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getByTrolley(String trolley, List<Computer> computerFilterList)
+	private void getByTrolley(String trolley, List<Motherboard> list)
 	{
 		if((trolley!=null) && !trolley.isBlank() && !trolley.isEmpty())
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getLocation().getTrolley().equals(trolley))
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByTrolley(trolley));
 		}
 	}
 
@@ -217,19 +151,13 @@ public class ReaktorWebRest
 	/**
 	 * Method getByClassroom
 	 * @param classroom
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getByClassroom(String classroom, List<Computer> computerFilterList)
+	private void getByClassroom(String classroom, List<Motherboard> list)
 	{
 		if((classroom!=null) && !classroom.isBlank() && !classroom.isEmpty())
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getLocation().getClassroom().equals(classroom))
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByClassroom(classroom));
 		}
 	}
 
@@ -237,19 +165,13 @@ public class ReaktorWebRest
 	/**
 	 * Method getByComputerNumber
 	 * @param computerNumber
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getByComputerNumber(String computerNumber, List<Computer> computerFilterList)
+	private void getByComputerNumber(String computerNumber, List<Motherboard> list)
 	{
 		if((computerNumber!=null) && !computerNumber.isBlank() && !computerNumber.isEmpty())
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getComputerNumber().equals(computerNumber))
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByComputerNumber(computerNumber));
 		}
 	}
 
@@ -257,19 +179,13 @@ public class ReaktorWebRest
 	/**
 	 * Method getByAndaluciaId
 	 * @param andaluciaId
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getByAndaluciaId(String andaluciaId, List<Computer> computerFilterList)
+	private void getByAndaluciaId(String andaluciaId, List<Motherboard> list)
 	{
 		if((andaluciaId!=null) && !andaluciaId.isBlank() && !andaluciaId.isEmpty())
 		{
-			for(Computer computer : this.computerList)
-			{
-				if(computer.getAndaluciaID().equals(andaluciaId))
-				{
-					computerFilterList.add(computer);
-				}
-			}
+			list.addAll(this.iMotherboardRepository.findByAndaluciaId(andaluciaId));
 		}
 	}
 
@@ -277,19 +193,19 @@ public class ReaktorWebRest
 	/**
 	 * Method getBySerialNumber
 	 * @param serialNumber
-	 * @param computerFilterList
+	 * @param list
 	 */
-	private void getBySerialNumber(String serialNumber, List<Computer> computerFilterList)
+	private void getBySerialNumber(String serialNumber, List<Motherboard> list)
 	{
 		if((serialNumber!=null) && !serialNumber.isBlank() && !serialNumber.isEmpty())
 		{
-			for(Computer computer : this.computerList)
+			Optional<Motherboard> mOptional = this.iMotherboardRepository.findById(serialNumber);
+			
+			if (mOptional.isPresent())
 			{
-				if(computer.getSerialNumber().equals(serialNumber))
-				{
-					computerFilterList.add(computer);
-				}
+				list.add(mOptional.get());
 			}
+			
 		}
 	}
 
@@ -298,7 +214,7 @@ public class ReaktorWebRest
 	 * Method getComputersScreens
 	 * @param classroom
 	 * @param trolley
-	 * @param plant
+	 * @param floor
 	 * @param professor
 	 * @return ResponseEntity
 	 */
@@ -306,7 +222,7 @@ public class ReaktorWebRest
 	public ResponseEntity<?> getComputersScreens(
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer plant,
+			@RequestHeader(required = false) Integer floor,
 			@RequestHeader(required = false) String professor
 			)
 	{
@@ -321,14 +237,14 @@ public class ReaktorWebRest
 			// --- BY trolley---
 			finalZipCommand = this.getToZipCommandByTrolley(trolley, finalZipCommand);
 
-			// --- BY plant---
-			finalZipCommand = this.getToZipCommandByPlant(plant, finalZipCommand);
+			// --- BY floor---
+			finalZipCommand = this.getToZipCommandByfloor(floor, finalZipCommand);
 
 			// --- BY professor---
 			finalZipCommand = this.getToZipCommandByProfessor(professor, finalZipCommand);
 
 			// --- BY ALL---
-			finalZipCommand = this.getToZipCommandByNullAll(classroom, trolley, plant, professor, finalZipCommand);
+			finalZipCommand = this.getToZipCommandByNullAll(classroom, trolley, floor, professor, finalZipCommand);
 
 			log.info(finalZipCommand);
 			
@@ -391,21 +307,19 @@ public class ReaktorWebRest
 	 * Method getToZipCommandByNullAll
 	 * @param classroom
 	 * @param trolley
-	 * @param plant
+	 * @param floor
 	 * @param professor
 	 * @param finalZipCommand
 	 * @return
 	 */
-	private String getToZipCommandByNullAll(String classroom, String trolley, Integer plant, String professor,
+	private String getToZipCommandByNullAll(String classroom, String trolley, Integer floor, String professor,
 			String finalZipCommand)
 	{
-		if((classroom==null) && (trolley == null) && (plant == null) && (professor == null) )
+		if((classroom==null) && (trolley == null) && (floor == null) && (professor == null) )
 		{
-			for(Computer computer : this.computerList)
+			for(Motherboard motherboard : this.iMotherboardRepository.findAll())
 			{
-
-				finalZipCommand+=" webScreenshots/"+computer.getSerialNumber()+".png";
-
+				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -422,12 +336,9 @@ public class ReaktorWebRest
 	{
 		if((professor!=null) && !professor.isBlank() && !professor.isEmpty())
 		{
-			for(Computer computer : this.computerList)
+			for(Motherboard motherboard : this.iMotherboardRepository.findByTeacher(professor))
 			{
-				if(computer.getProfessor().equals(professor))
-				{
-					finalZipCommand+=" webScreenshots/"+computer.getSerialNumber()+".png";
-				}
+				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -435,21 +346,18 @@ public class ReaktorWebRest
 
 
 	/**
-	 * Method getToZipCommandByPlant
-	 * @param plant
+	 * Method getToZipCommandByfloor
+	 * @param floor
 	 * @param finalZipCommand
 	 * @return
 	 */
-	private String getToZipCommandByPlant(Integer plant, String finalZipCommand)
+	private String getToZipCommandByfloor(Integer floor, String finalZipCommand)
 	{
-		if(plant!=null)
+		if(floor!=null)
 		{
-			for(Computer computer : this.computerList)
+			for(Motherboard motherboard : this.iMotherboardRepository.findByFloor(floor))
 			{
-				if(computer.getLocation().getPlant()==plant)
-				{
-					finalZipCommand+=" webScreenshots/"+computer.getSerialNumber()+".png";
-				}
+				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -466,12 +374,9 @@ public class ReaktorWebRest
 	{
 		if((trolley!=null) && !trolley.isBlank() && !trolley.isEmpty())
 		{
-			for(Computer computer : this.computerList)
+			for(Motherboard motherboard : this.iMotherboardRepository.findByTrolley(trolley))
 			{
-				if(computer.getLocation().getTrolley().equals(trolley))
-				{
-					finalZipCommand+=" webScreenshots/"+computer.getSerialNumber()+".png";
-				}
+				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -488,12 +393,9 @@ public class ReaktorWebRest
 	{
 		if((classroom!=null) && !classroom.isBlank() && !classroom.isEmpty())
 		{
-			for(Computer computer : this.computerList)
+			for(Motherboard motherboard : this.iMotherboardRepository.findByClassroom(classroom))
 			{
-				if(computer.getLocation().getClassroom().equals(classroom))
-				{
-					finalZipCommand+=" webScreenshots/"+computer.getSerialNumber()+".png";
-				}
+				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
