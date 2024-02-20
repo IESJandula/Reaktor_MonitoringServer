@@ -11,7 +11,6 @@ server:
   port: 8084
 springdoc.api-docs.path: /api-docs
 logging:
-    pattern.console: true
     level:
         root: DEBUG
     file:
