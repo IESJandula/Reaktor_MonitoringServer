@@ -423,42 +423,30 @@ public class ReaktorMonitoringRest
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			TaskId taskId = new TaskId();
-			taskId.setSerialNumber(serialNumber);
+			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
+			List<Task> tasks = this.iTaskRepository.findByTaskIdSerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
+			
+      if (!tasks.isEmpty())
+			{ 
+        // --- ORDENAMOS LAS FECHAS ---
+        tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
 
-			List<Task> allTasks = this.iTaskRepository.findByStatus(Action.STATUS_TODO);
-			List<Task> tasks = new ArrayList<Task>();
+        // --- OBTENEMOS LA PRIMERA TASK ---
+        Task task = tasks.get(0);		
 
-			// FILTRAMOS
-			for (Task tmpTask : allTasks)
-			{
-				if (tmpTask.getTaskId().getSerialNumber().equals(serialNumber))
-				{
-					tasks.add(tmpTask);
-				}
-			}
-
-			if (!tasks.isEmpty())
-			{
-				// --- ORDENAMOS LAS FECHAS ---
-				tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
-
-				// --- OBTENEMOS LA PRIMERA TASK ---
-				Task task = tasks.get(0);
-
-				// --- CREAMOS TASK DTO---
-				TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(), task.getAction().getCommandWindows(),
-						task.getAction().getCommandLinux(), task.getInfo(), task.getTaskId().getDate());
-
+        // --- CREAMOS TASK DTO---
+        TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
+			
 				// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
 				task.setStatus(Action.STATUS_IN_PROGRESS);
 				this.iTaskRepository.saveAndFlush(task);
-				// RETORNAMOS
-				return ResponseEntity.ok().body(taskDTO);
-			}
+
+        // RETORNAMOS
+        return ResponseEntity.ok().body(taskDTO); 
+      }
+
 			log.error("No actions to do");
 			return ResponseEntity.ok().build();
-
 		}
 		// CAPTURAMOS Y ARROJAMOS
 		catch (Exception exception)
