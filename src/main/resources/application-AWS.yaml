@@ -2,8 +2,8 @@ spring:
   jpa.hibernate.ddl-auto: create
   datasource:
     url: jdbc:mysql://localhost:3306/reaktor
-    username: root
-    password: root
+    username: reaktor
+    password: wH92u61x~
     hikari:
       connection-timeout: 60000
       maximum-pool-size: 5
