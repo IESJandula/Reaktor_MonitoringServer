@@ -13,7 +13,7 @@ springdoc.api-docs.path: /api-docs
 logging:
     pattern.console: false
     level:
-        root: WARN
+        root: DEBUG
     file:
         name: /tmp/archivo.log
         max-size: 1MB
