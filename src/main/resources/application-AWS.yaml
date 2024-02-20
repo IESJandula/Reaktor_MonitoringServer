@@ -10,7 +10,7 @@ server:
 springdoc.api-docs.path: /api-docs
 logging:
     level:
-        root: INFO
+        root: DEBUG
     file:
         name: /tmp/archivo.log
         max-size: 1MB
