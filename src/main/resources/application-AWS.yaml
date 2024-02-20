@@ -8,10 +8,10 @@ spring:
       connection-timeout: 60000
       maximum-pool-size: 5
 server:
-  port: 80
+  port: 8084
 springdoc.api-docs.path: /api-docs
 logging:
-    pattern.console: false
+    pattern.console: true
     level:
         root: DEBUG
     file:
