@@ -1,0 +1,119 @@
+{
+	"info": {
+		"_postman_id": "8f6a3987-0989-4cd1-87cf-536b93b72b31",
+		"name": "ReaktorWebEndpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29925228"
+	},
+	"item": [
+		{
+			"name": "getComputerByAny",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "andaluciaId",
+						"value": "AND-V6KGX",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "computerNumber",
+						"value": "5D",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "classroom",
+						"value": "2DAM",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "trolley",
+						"value": "Trolley1",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "plant",
+						"value": "1",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "professor",
+						"value": "paco",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/web",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"web"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getComputersScreen",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "classroom",
+						"value": "2DAM",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "trolley",
+						"value": "trolley1",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "plant",
+						"value": "1",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "professor",
+						"value": "paco",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/web/screenshot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"web",
+						"screenshot"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

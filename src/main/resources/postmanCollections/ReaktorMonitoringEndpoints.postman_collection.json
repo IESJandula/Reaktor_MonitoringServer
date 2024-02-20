@@ -1,0 +1,181 @@
+{
+	"info": {
+		"_postman_id": "febd4697-2392-4d42-bca5-2010f7c7bd18",
+		"name": "ReaktorMonitoringEndpoints",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "29925228"
+	},
+	"item": [
+		{
+			"name": "sendStatus",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " {\r\n    \"statusInfo\":\"install\",\r\n    \"status\":false,\r\n    \"error\":null,\r\n    \"taskDTO\":{\r\n        \"name\":\"restart\",\r\n        \"commandWindows\":\"shutdown -r\",\r\n        \"commandLinux\":\"reboot\",\r\n        \"info\":null,\r\n        \"date\":\"2024-02-20\"\r\n    }\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/send/status",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"send",
+						"status"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getAnyFile",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": " {\r\n    \"statusInfo\":\"get file\",\r\n    \"status\":false,\r\n    \"error\":null,\r\n    \"taskDTO\":{\r\n        \"name\":\"file\",\r\n        \"commandWindows\":\"\",\r\n        \"commandLinux\":\"\",\r\n        \"info\":\"files/filename.prueba\",\r\n        \"date\":\"2024-02-20\"\r\n    }\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/get/file",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"get",
+						"file"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getScreenshotOrder",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/get/screenshot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"get",
+						"screenshot"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "sendScreenshot",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					},
+					{
+						"key": "dateLong",
+						"value": "1213215646532",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "screenshot",
+							"type": "file",
+							"src": "/C:/Users/casaj/Downloads/README.md"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8084/computers/send/screenshot",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"send",
+						"screenshot"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "getPendingActions",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "sn123",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/get/pendingActions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"get",
+						"pendingActions"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
