@@ -27,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.Motherboard;
-import es.iesjandula.reaktor.models.Reaktor;
 import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.Usb;
 import es.iesjandula.reaktor.models.Id.TaskId;
@@ -74,37 +73,25 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/wifiCfg")
-	public ResponseEntity<?> postWifiCfg(@RequestHeader(required = true) String serialNumber,
+	public ResponseEntity<?> postWifiCfg(
+			@RequestHeader(required = true) String serialNumber,
 			@RequestHeader(required = true) String wifiFileName)
 	{
 		try
 		{
-			// --- GETTING THE COMMAND BLOCK ----
-			Set<Motherboard> commands = new HashSet<Motherboard>();
-
-			String methodsUsed = "";
-
-			// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-			if (this.checkEmptys(serialNumber, "_", "_", "_"))
+			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
+			if (motherboardId.isEmpty())
 			{
-				String error = "Any Paramater Is Empty or Blank";
+				String error = "Incorrect serial number";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-
-			if (serialNumber != null)
-			{
-				// ALL COMMANDS ON SPECIFIC COMPUTER BY serialNumber
-				this.addBySerialNumber(serialNumber, commands);
-				methodsUsed += "serialNumber,";
-			}
-			log.info("Parameters Used: " + methodsUsed);
-
+			
 			Optional<Action> actionId = this.iActionRepository.findById("configWifi");
 
 			if (actionId.isPresent())
 			{
-				this.addTasks(commands, actionId.get(), "./confWIFI/" + wifiFileName);
+				this.addTask(motherboardId.get(), actionId.get(), "./confWIFI/" + wifiFileName);
 			}
 
 			// --- RETURN OK RESPONSE ---
@@ -129,31 +116,19 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/chrome/openWeb")
-	public ResponseEntity<?> postOpenWeb(@RequestHeader(required = true) String serialNumber,
+	public ResponseEntity<?> postOpenWeb(
+			@RequestHeader(required = true) String serialNumber,
 			@RequestHeader(required = true) String webURL)
 	{
 		try
 		{
-			// --- GETTING THE COMMAND BLOCK ----
-			Set<Motherboard> commands = new HashSet<Motherboard>();
-
-			String methodsUsed = "";
-
-			// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-			if (this.checkEmptys(serialNumber, "_", "_", "_"))
+			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
+			if (motherboardId.isEmpty())
 			{
-				String error = "Any Paramater Is Empty or Blank";
+				String error = "Incorrect serial number";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-
-			if (serialNumber != null)
-			{
-				// ALL COMMANDS ON SPECIFIC COMPUTER BY serialNumber
-				this.addBySerialNumber(serialNumber, commands);
-				methodsUsed += "serialNumber,";
-			}
-			log.info("Parameters Used: " + methodsUsed);
 
 			Optional<Action> actionId = this.iActionRepository.findById("openWeb");
 
@@ -161,7 +136,7 @@ public class ReaktorAdministrationRest
 			if (actionId.isPresent())
 			{
 				// -- -CREAMOS TASKS ---
-				this.addTasks(commands, actionId.get(), webURL);
+				this.addTask(motherboardId.get(), actionId.get(), webURL);
 			}
 
 			// --- RETURN OK RESPONSE ---
@@ -189,9 +164,12 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/commandLine")
-	public ResponseEntity<?> postComputerCommandLine(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer floor, @RequestHeader(required = true) String commandLine)
+	public ResponseEntity<?> postComputerCommandLine(
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom, 
+			@RequestHeader(required = false) String trolley,
+			@RequestHeader(required = false) Integer floor, 
+			@RequestHeader(required = true) String commandLine)
 	{
 		try
 		{
@@ -202,14 +180,6 @@ public class ReaktorAdministrationRest
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (serialNumber != null)
 				{
@@ -279,8 +249,10 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/shutdown")
-	public ResponseEntity<?> putComputerShutdown(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
+	public ResponseEntity<?> putComputerShutdown(
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom, 
+			@RequestHeader(required = false) String trolley,
 			@RequestHeader(required = false) Integer floor)
 	{
 		try
@@ -291,14 +263,6 @@ public class ReaktorAdministrationRest
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (serialNumber != null)
 				{
@@ -367,8 +331,10 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/restart")
-	public ResponseEntity<?> putComputerRestart(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
+	public ResponseEntity<?> putComputerRestart(
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom, 
+			@RequestHeader(required = false) String trolley,
 			@RequestHeader(required = false) Integer floor)
 	{
 		try
@@ -379,14 +345,6 @@ public class ReaktorAdministrationRest
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (serialNumber != null)
 				{
@@ -461,8 +419,10 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/peripheral", consumes = "application/json")
-	public ResponseEntity<?> postPeripheral(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestBody(required = true) Usb usb)
+	public ResponseEntity<?> postPeripheral(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestBody(required = true) Usb usb)
 	{
 		try
 		{
@@ -472,14 +432,6 @@ public class ReaktorAdministrationRest
 			if ((classroom != null) || (trolley != null))
 			{
 				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys("_", "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (trolley != null)
 				{
@@ -545,8 +497,10 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/screenshot")
-	public ResponseEntity<?> sendScreenshotOrder(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String serialNumber)
+	public ResponseEntity<?> sendScreenshotOrder(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String serialNumber)
 	{
 		try
 		{
@@ -557,13 +511,6 @@ public class ReaktorAdministrationRest
 			{
 				String methodsUsed = "";
 
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 				if (serialNumber != null)
 				{
 					// ADD BY SERIALNUMBER
@@ -631,8 +578,10 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
-	public ResponseEntity<?> sendSoftware(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
+	public ResponseEntity<?> sendSoftware(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String professor,
 			@RequestHeader(required = true) String software)
 	{
 		try
@@ -643,13 +592,6 @@ public class ReaktorAdministrationRest
 			{
 				String methodsUsed = "";
 
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys("_", professor, classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 				if (professor != null)
 				{
 					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
@@ -720,8 +662,10 @@ public class ReaktorAdministrationRest
 	 * @return
 	 */
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
-	public ResponseEntity<?> unistallSoftware(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley, @RequestHeader(required = false) String professor,
+	public ResponseEntity<?> unistallSoftware(
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String professor,
 			@RequestHeader(required = true) String software)
 	{
 		try
@@ -731,14 +675,6 @@ public class ReaktorAdministrationRest
 			if ((classroom != null) || (trolley != null))
 			{
 				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys("_", professor, classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (professor != null)
 				{
@@ -806,73 +742,113 @@ public class ReaktorAdministrationRest
 	 * @param computerInstance
 	 * @return ResponseEntity
 	 */
-	@RequestMapping(method = RequestMethod.PUT, value = "/computer/edit", consumes = "application/json")
+	@RequestMapping(method = RequestMethod.PUT, value = "/computer/edit")
 	public ResponseEntity<?> updateComputer(
-			@RequestHeader(required = false) String serialNumberMotherboard,
-			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = true) String serialNumber,
+			@RequestHeader(required = false) String computerSerialNumber,
 			@RequestHeader(required = false) String andaluciaId, 
-			@RequestHeader(required = false) String computerNumber)
+			@RequestHeader(required = false) String computerNumber,
+			@RequestHeader(required = false) String classroom,
+			@RequestHeader(required = false) String trolley, 
+			@RequestHeader(required = false) String teacher, 
+			@RequestHeader(required = false) Integer floor, 
+			@RequestHeader(required = false) Boolean admin)
 	{
 		try
 		{
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((serialNumber != null) || (andaluciaId != null) || (computerNumber != null))
+			
+			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
+			if (motherboardId.isEmpty())
 			{
-				String methodsUsed = "";
-
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptyIds(serialNumber, andaluciaId, computerNumber))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
-
-				if (serialNumber != null)
-				{
-					// ON SPECIFIC COMPUTER BY serialNumber
-					Motherboard motherboard = this.iMotherboardRepository.findByMotherBoardSerialNumber(serialNumberMotherboard);
-
-					this.updateMotherboard(reaktorInstance, motherboard);
-
-					methodsUsed += "serialNumber,";
-				}
-				if (andaluciaId != null)
-				{
-					// ON SPECIFIC COMPUTER BY trolley
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByAndaluciaId(andaluciaId);
-
-					for (Motherboard motherboard : motherboardList)
-					{
-						this.updateMotherboard(reaktorInstance, motherboard);
-					}
-
-					methodsUsed += "trolley,";
-				}
-				if (computerNumber != null)
-				{
-					// ON SPECIFIC COMPUTER BY classroom
-					List<Motherboard> motherboardList = this.iMotherboardRepository
-							.findByComputerNumber(computerNumber);
-
-					for (Motherboard motherboard : motherboardList)
-					{
-						this.updateMotherboard(reaktorInstance, motherboard);
-					}
-					methodsUsed += "classroom,";
-				}
-
-				log.info("Parameters Used: " + methodsUsed);
-				// --- RETURN OK RESPONSE ---
-				return ResponseEntity.ok().build();
+				String error = "Incorrect serial number";
+				ComputerError computerError = new ComputerError(404, error, null);
+				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-			else
+			
+			if ((computerSerialNumber == null) && (andaluciaId == null) && (computerNumber == null) 
+					&& (classroom == null) && (trolley == null) && (teacher == null) && (floor == null)
+					&& (admin == null))
 			{
 				// ALL COMPUTERS
 				String error = "No parameters selected";
 				ComputerError computerError = new ComputerError(404, error, null);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
+
+			if (computerSerialNumber != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateSerialNumber");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), computerSerialNumber);
+				}
+			}
+			if (andaluciaId != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateAndaluciaId");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), andaluciaId);
+				}
+			}
+			if (computerNumber != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateComputerNumber");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), computerNumber);
+				}
+			}
+			if (teacher != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateTeacher");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), teacher);
+				}
+			}
+			if (trolley != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateTrolley");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), trolley);
+				}
+			}
+			if (classroom != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateClassroom");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), classroom);
+				}
+			}
+			if (floor != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateFloor");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), floor.toString());
+				}
+			}
+			if (admin != null)
+			{
+				Optional<Action> action = this.iActionRepository.findById("updateAdmin");
+				
+				if (action.isPresent())
+				{
+					addTask(motherboardId.get(), action.get(), admin.toString());
+				}
+			}
+			// --- RETURN OK RESPONSE ---
+			return ResponseEntity.ok().build();
 		}
 		catch (Exception exception)
 		{
@@ -880,104 +856,6 @@ public class ReaktorAdministrationRest
 			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
-	}
-
-	
-
-	/**
-	 * Method checkEmptyIds
-	 * 
-	 * @param serialNumber
-	 * @param computerNumber
-	 * @param computerNumber2
-	 * @return
-	 */
-	private boolean checkEmptyIds(String serialNumber, String andaluciaId, String computerNumber)
-	{
-		if (serialNumber != null)
-		{
-			if (serialNumber.isBlank() || serialNumber.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "serialNumber Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		if (andaluciaId != null)
-		{
-			if (andaluciaId.isBlank() || andaluciaId.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "andaluciaId Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		if (computerNumber != null)
-		{
-			if (computerNumber.isBlank() || computerNumber.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "computerNumber Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Method checkEmptysProfessorClassTrolley
-	 * 
-	 * @param professor
-	 * @param classroom
-	 * @param trolley
-	 * @return
-	 */
-	private boolean checkEmptys(String serialNumber, String professor, String classroom, String trolley)
-	{
-		if (serialNumber != null)
-		{
-			if (serialNumber.isBlank() || serialNumber.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "Serial Number Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		if (professor != null)
-		{
-			if (professor.isBlank() || professor.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "Professor Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		if (trolley != null)
-		{
-			if (trolley.isBlank() || trolley.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "Trolley Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		if (classroom != null)
-		{
-			if (classroom.isBlank() || classroom.isEmpty())
-			{
-				// --- IF IS PARAMETER IS BLANK OR EMPTY ---
-				String error = "Classroom Is Empty or Blank";
-				log.error(error);
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -991,9 +869,12 @@ public class ReaktorAdministrationRest
 	 * @return ResponseEntity
 	 */
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
-	public ResponseEntity<?> postComputerExecFile(@RequestHeader(required = false) String serialNumber,
-			@RequestHeader(required = false) String classroom, @RequestHeader(required = false) String trolley,
-			@RequestHeader(required = false) Integer floor, @RequestHeader(required = true) String fileName,
+	public ResponseEntity<?> postComputerExecFile(
+			@RequestHeader(required = false) String serialNumber,
+			@RequestHeader(required = false) String classroom, 
+			@RequestHeader(required = false) String trolley,
+			@RequestHeader(required = false) Integer floor, 
+			@RequestHeader(required = true) String fileName,
 			@RequestBody(required = true) MultipartFile execFile)
 	{
 		try
@@ -1001,13 +882,6 @@ public class ReaktorAdministrationRest
 			Set<Motherboard> fileList = new HashSet<Motherboard>();
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				// --- CHECKING IF ANY PARAMETER IS BLANK OR EMPTY ---
-				if (this.checkEmptys(serialNumber, "_", classroom, trolley))
-				{
-					String error = "Any Paramater Is Empty or Blank";
-					ComputerError computerError = new ComputerError(404, error, null);
-					return ResponseEntity.status(404).body(computerError.toMap());
-				}
 
 				if (serialNumber != null)
 				{
@@ -1323,5 +1197,39 @@ public class ReaktorAdministrationRest
 			// --- GUARDAMOS ---
 			this.iTaskRepository.saveAndFlush(task);
 		}
+	}
+	
+	private void addTask(Motherboard motherboard, Action action, String info) 
+	{
+		
+		// SACAMOS LA FECHA ACTUAL
+		Date date = new Date();
+		
+		// -- -CREAMOS LA TASK ---
+		Task task = new Task();
+		// --- CREAMOS LA ID DE LA TASK --
+		TaskId taskId = new TaskId();
+
+		// --- PONEMOS EL NOMBRE DE LA ACCION (TASK)---
+		taskId.setActionName(action.getName());
+		
+		// --- PONEMOS LA DATE ---
+		taskId.setDate(date);
+		
+		// --- PONEMOS EL SERIALNUMBER ---
+		taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());
+
+		// ARMAMOS EL TASK CON TODO LO ANTERIOR ---
+		task.setTaskId(taskId);
+		task.setAction(action);
+		task.setMotherboard(motherboard);
+		// --- PONEMOS EL INFO NECESARIO
+		task.setInfo(info);
+		
+		// PONEMOS EN ESTADO DE TODO
+		task.setStatus(Action.STATUS_TODO);
+
+		// --- GUARDAMOS ---
+		this.iTaskRepository.saveAndFlush(task);
 	}
 }

@@ -1,7 +1,12 @@
 name,commandWindows,commandLinux
+updateSerialNumber,,
 updateAndaluciaId,,
 updateComputerNumber,,
-updateSerialNumber,,
+updateTeacher,,
+updateTrolley,,
+updateClassroom,,
+updateFloor,,
+updateAdmin,,
 screenshot,,
 blockDisp,,
 configWifi,netsh wlan add profile filename="INFO_INFO",
