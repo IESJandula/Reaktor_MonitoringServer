@@ -1,7 +1,5 @@
 package es.iesjandula.reaktor.monitoring_server.interfaces;
 
-import java.util.Scanner;
-
 import org.springframework.stereotype.Repository;
 
 import es.iesjandula.reaktor.exceptions.ComputerError;

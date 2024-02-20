@@ -91,7 +91,7 @@ public class ReaktorAdministrationRest
 
 			if (actionId.isPresent())
 			{
-				this.addTask(motherboardId.get(), actionId.get(), "./confWIFI/" + wifiFileName);
+				this.addTask(motherboardId.get(), actionId.get(), Constants.REAKTOR_CONFIG_EXEC_CONF_WIFI + File.separator + wifiFileName);
 			}
 
 			// --- RETURN OK RESPONSE ---

@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
+import es.iesjandula.reaktor.monitoring_server.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -319,7 +320,7 @@ public class ReaktorWebRest
 		{
 			for(Motherboard motherboard : this.iMotherboardRepository.findAll())
 			{
-				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
+				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -338,7 +339,7 @@ public class ReaktorWebRest
 		{
 			for(Motherboard motherboard : this.iMotherboardRepository.findByTeacher(professor))
 			{
-				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
+				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -357,7 +358,7 @@ public class ReaktorWebRest
 		{
 			for(Motherboard motherboard : this.iMotherboardRepository.findByFloor(floor))
 			{
-				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
+				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -376,7 +377,7 @@ public class ReaktorWebRest
 		{
 			for(Motherboard motherboard : this.iMotherboardRepository.findByTrolley(trolley))
 			{
-				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
+				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
@@ -395,7 +396,7 @@ public class ReaktorWebRest
 		{
 			for(Motherboard motherboard : this.iMotherboardRepository.findByClassroom(classroom))
 			{
-				finalZipCommand+=" webScreenshots/"+motherboard.getMotherBoardSerialNumber()+".png";
+				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
 			}
 		}
 		return finalZipCommand;
