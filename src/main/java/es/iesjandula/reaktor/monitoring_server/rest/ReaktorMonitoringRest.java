@@ -34,6 +34,7 @@ import es.iesjandula.reaktor.models.Id.TaskId;
 import es.iesjandula.reaktor.monitoring_server.reaktor_actions.ReaktorActions;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
+import es.iesjandula.reaktor.monitoring_server.utils.Constants;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -285,7 +286,7 @@ public class ReaktorMonitoringRest
 			//String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
 
 			// --- MONTAMOS EL NOMBRE / RUTA QUE TENDRA EL EL SCREENSHOT ---
-			String fileName = "./screenshots/screen_" + serialNumber + "_" + date.toString() + ".png";
+			String fileName = Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + "screen_" + serialNumber + "_" + date.toString() + ".png";
 			File file = new File(fileName);
 			String absolutePath = file.getAbsolutePath();
 

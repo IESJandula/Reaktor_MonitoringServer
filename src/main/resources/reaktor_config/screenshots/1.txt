@@ -1,0 +1,12 @@
+------------------------------------------------------------
+get status  // peticion cliente
+get file  // peticion cliente
+
+
+
+get screnshot order // peticion cliente
+
+
+
+send screenshot // no tiene sentido peticion cliente.
+------------------------------------------------------------
