@@ -5,13 +5,13 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/reaktor
     username: root
-    password: root
+    password: toor
     hikari:
       connection-timeout: 60000
       maximum-pool-size: 5
 server:
   port: 8084
-
+springdoc.api-docs.path: /api-docs
 reaktor:
   cronComputerOn: 5_000
   cronComputerOnDifference: 7_000

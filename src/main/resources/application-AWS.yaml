@@ -1,18 +1,16 @@
 spring:
   jpa.hibernate.ddl-auto: create
   datasource:
-    url: jdbc:mysql://localhost:3306/reaktor
-    username: root
-    password: root
-    hikari:
-      connection-timeout: 60000
-      maximum-pool-size: 5
+    url: jdbc:mariadb://localhost:3306/reaktor
+    username: reaktor
+    password: wH92u61x~
+    driver-class-name: org.mariadb.jdbc.Driver
 server:
-  port: 80
+  port: 8084
+springdoc.api-docs.path: /api-docs
 logging:
-    pattern.console: false
     level:
-        root: WARN
+        root: INFO
     file:
         name: /tmp/archivo.log
         max-size: 1MB
