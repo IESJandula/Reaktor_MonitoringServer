@@ -33,7 +33,7 @@ public class MonitoringServerApplication implements CommandLineRunner
 	public void run(String... args) throws Exception
 	{
 		this.checkServerStructure();
-		this.iParseActions.parseFile(".\\src\\main\\resources\\actionsCSV.csv");
+		this.iParseActions.parseFile(".\\actionsCSV.csv");
 		
 	}
     /**
