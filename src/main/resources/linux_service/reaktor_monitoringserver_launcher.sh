@@ -1,0 +1,1 @@
+java -jar /home/paco/Reaktor_MonitoringServer/actions-runner/_work/Reaktor_MonitoringServer/Reaktor_MonitoringServer/target/MonitoringServer-0.0.1-SNAPSHOT-jar-with-dependencies.jar --spring.profiles.active=AWS &

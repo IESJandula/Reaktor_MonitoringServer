@@ -1,0 +1,21 @@
+[Unit]
+Description=Reaktor MonitoringServer Service
+[Service]
+User=root
+WorkingDirectory=/root # Directorio donde esta el ejecutable .sh
+ExecStart=/bin/bash /root/reaktor_monitoringserver_launcher.sh # Ruta completa donde esta el ejecutable .sh
+
+SuccessExitStatus=143 # Si da 143 es que ha conseguido arrancarlo bien 
+RestartSec=5 # Si al reiniciar, falla, entonces esperara 5 segundos antes de volver a lanzarlo
+TimeoutStopSec=10 # Este valor está relacionado con RestartSec, será el máximo del valor de RestartSec entre espera de ejecuciones de error (aqui sera solo de 2 veces: 10 / 5 = 2)
+Restart=on-failure # Cuando falle, intentalo otra vez
+
+[Install]
+WantedBy=multi-user.target # Para que pueda ser utilizado por todos los usuarios del equipo
+
+# Este fichero se tiene que mover a la ruta: /etc/systemd/system/
+# Ejemplo: mv reaktor_monitoringserver.service /etc/systemd/system/reaktor_monitoringserver.service
+
+# Para habilitarlo y lanzarlo se hace con:
+# sudo systemctl start reaktor_monitoringserver.service # Añade este servicio al arranque de ubuntu
+# sudo systemctl enable reaktor_monitoringserver.service # Habilitar el servicio de ubuntu

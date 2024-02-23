@@ -1,0 +1,14 @@
+[Unit]
+Description=Reaktor MonitoringServer Service
+[Service]
+User=root
+WorkingDirectory=/root
+ExecStart=/bin/bash reaktor_monitoringserver_launcher.sh
+
+SuccessExitStatus=143
+RestartSec=5
+TimeoutStopSec=10
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
