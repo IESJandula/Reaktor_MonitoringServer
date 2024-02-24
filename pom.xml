@@ -51,16 +51,20 @@
             <artifactId>Models</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
+        
+        <!--SWAGGER WEB GENERATOR-->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
             <version>2.2.0</version>
         </dependency>
+        <!--SWAGGER YAML DOWNLOAD GENERATOR-->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
             <version>2.3.0</version>
         </dependency>
+        <!--JAVADOC WITH SWAGGER GENERATOR-->
         <dependency>
             <groupId>com.github.therapi</groupId>
             <artifactId>therapi-runtime-javadoc</artifactId>
@@ -94,6 +98,9 @@
                     </execution>
                 </executions>
             </plugin>
+            
+            <!--PLUGIN FOR JAVADOC DOC USED ON THE SWAGGER GENERATION-->
+            <!--USING SPECIFIC CONFIG , FOR FIX LOMBOK CONFLICTS-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
