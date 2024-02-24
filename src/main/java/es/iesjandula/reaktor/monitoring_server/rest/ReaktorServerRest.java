@@ -10,6 +10,7 @@ import es.iesjandula.reaktor.monitoring_server.reaktor_actions.ReaktorActions;
 import es.iesjandula.reaktor.monitoring_server.reaktor_actions.ReaktorService;
 import es.iesjandula.reaktor.monitoring_server.repository.IMalwareRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +38,12 @@ public class ReaktorServerRest
     private ReaktorService reaktorService;
 
 
+    /**
+     * Method sendInformation
+     * @param reaktor
+     * @return
+     */
+	@Operation
     @RequestMapping(method = RequestMethod.POST, value = "/reaktor")
     public ResponseEntity<?> sendInformation(
             @RequestBody Reaktor reaktor
@@ -51,6 +58,7 @@ public class ReaktorServerRest
      * This Method is used to obtain the malware list
      * @return the malware list
      */
+	@Operation
     @RequestMapping(method = RequestMethod.POST, value = "/computer-on")
     public ResponseEntity<?> computerOn(
             @RequestHeader String motherBoardSerialNumber
@@ -82,6 +90,7 @@ public class ReaktorServerRest
      * This Method is used to obtain the malware list
      * @return the malware list
      */
+	@Operation
     @RequestMapping(method = RequestMethod.GET, value = "/malware")
     public List<Malware> getMalware()
     {
@@ -92,6 +101,7 @@ public class ReaktorServerRest
      * This Method is used to obtain the malware list for Web
      * @return the malware list for Web
      */
+	@Operation
     @RequestMapping(method = RequestMethod.GET, value = "/malware-web")
     public List<MalwareDTOWeb> getMalwareWeb()
     {
@@ -102,6 +112,7 @@ public class ReaktorServerRest
      * This Method is used to create a malware
      * @return Ok if the malware is created
      */
+	@Operation
     @RequestMapping(method = RequestMethod.POST, value = "/malware")
     public ResponseEntity<?> createMalware(
             @RequestBody Malware newMalware
@@ -117,6 +128,7 @@ public class ReaktorServerRest
      * @param name malware name
      * @return Ok if the malware is created
      */
+	@Operation
     @RequestMapping(method = RequestMethod.DELETE, value = "/malware/{name}")
     public ResponseEntity<?> deleteMalware(
             @PathVariable String name
@@ -130,6 +142,7 @@ public class ReaktorServerRest
      * This Method is used to report a malware for a motherboard
      * @return Ok if the malware is reported
      */
+	@Operation
     @Transactional
     @RequestMapping(method = RequestMethod.POST, value = "/report-malware")
     public ResponseEntity<?> reportMalware(
@@ -151,12 +164,23 @@ public class ReaktorServerRest
         return ResponseEntity.ok("Malware reported");
     }
 
+    /**
+     * Method getComputer
+     * @return
+     */
+	@Operation
     @RequestMapping(method = RequestMethod.GET, value = "/computer")
     public ResponseEntity<List<SimpleComputerDTO>> getComputer()
     {
         return ResponseEntity.ok(reaktorService.getSimpleComputerDTO());
     }
 
+    /**
+     * Method getReaktor
+     * @param idComputer
+     * @return
+     */
+	@Operation
     @RequestMapping(method = RequestMethod.GET, value = "/reaktor/{idComputer}")
     public ResponseEntity<ReaktorDTO> getReaktor(@PathVariable String idComputer )
     {

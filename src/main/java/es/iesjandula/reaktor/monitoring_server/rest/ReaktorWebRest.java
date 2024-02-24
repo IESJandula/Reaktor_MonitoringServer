@@ -20,6 +20,7 @@ import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.utils.Constants;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -48,6 +49,7 @@ public class ReaktorWebRest
 	 * @param hardwareList
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/web", produces = "application/json")
 	public ResponseEntity<?> getComputersByAny(
 			@RequestHeader(required = false) String serialNumber,
@@ -219,6 +221,7 @@ public class ReaktorWebRest
 	 * @param professor
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/web/screenshot", produces = "application/zip")
 	public ResponseEntity<?> getComputersScreens(
 			@RequestHeader(required = false) String classroom,

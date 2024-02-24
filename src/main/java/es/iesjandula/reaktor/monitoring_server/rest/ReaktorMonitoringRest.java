@@ -35,6 +35,7 @@ import es.iesjandula.reaktor.monitoring_server.reaktor_actions.ReaktorActions;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import es.iesjandula.reaktor.monitoring_server.utils.Constants;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -66,6 +67,7 @@ public class ReaktorMonitoringRest
 	 * @param statusList
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/status", consumes = "application/json")
 	public ResponseEntity<?> sendStatusComputer(@RequestHeader(required = true) String serialNumber,
 			@RequestBody(required = true) Status status)
@@ -133,6 +135,7 @@ public class ReaktorMonitoringRest
 	 * @param serialNumber, the serial number of the computer
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/get/file", produces = "multipart/form-data")
 	public ResponseEntity<?> getAnyFile(@RequestHeader(required = true) String serialNumber,
 			@RequestBody(required = true) TaskDTO taskDTO)
@@ -248,6 +251,7 @@ public class ReaktorMonitoringRest
 	 * @param serialNumber, the serial number of the computer
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/screenshot", consumes = "multipart/form-data")
 	public ResponseEntity<?> sendScreenshot(@RequestBody(required = true) MultipartFile screenshot,
 			@RequestHeader(required = true) String serialNumber, @RequestHeader(required = true) Long dateLong)
@@ -392,6 +396,7 @@ public class ReaktorMonitoringRest
 	 * @param reaktorInstance the reaktor object instance
 	 * @return ResponseEntity response
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/fullInfo", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<?> sendFullComputer(@RequestHeader(required = false) String serialNumber,
 			@RequestBody(required = true) Reaktor reaktorInstance)
@@ -408,6 +413,7 @@ public class ReaktorMonitoringRest
 	 * @param serialNumber the serialNumber
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/get/pendingActions", produces = "application/json")
 	public ResponseEntity<?> getPendingActions(@RequestHeader(required = true) String serialNumber)
 	{

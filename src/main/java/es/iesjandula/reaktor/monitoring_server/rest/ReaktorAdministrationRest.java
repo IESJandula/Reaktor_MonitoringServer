@@ -34,6 +34,7 @@ import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
 import es.iesjandula.reaktor.monitoring_server.utils.Constants;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -72,6 +73,7 @@ public class ReaktorAdministrationRest
 	 * @param wifiFile
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/wifiCfg")
 	public ResponseEntity<?> postWifiCfg(
 			@RequestHeader(required = true) String serialNumber,
@@ -115,6 +117,7 @@ public class ReaktorAdministrationRest
 	 * @param webURL
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/chrome/openWeb")
 	public ResponseEntity<?> postOpenWeb(
 			@RequestHeader(required = true) String serialNumber,
@@ -163,6 +166,7 @@ public class ReaktorAdministrationRest
 	 * @param commandLine  the commnadLine Object
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/commandLine")
 	public ResponseEntity<?> postComputerCommandLine(
 			@RequestHeader(required = false) String serialNumber,
@@ -248,6 +252,7 @@ public class ReaktorAdministrationRest
 	 * @param floor
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/shutdown")
 	public ResponseEntity<?> putComputerShutdown(
 			@RequestHeader(required = false) String serialNumber,
@@ -330,6 +335,7 @@ public class ReaktorAdministrationRest
 	 * @param floor
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/restart")
 	public ResponseEntity<?> putComputerRestart(
 			@RequestHeader(required = false) String serialNumber,
@@ -418,6 +424,7 @@ public class ReaktorAdministrationRest
 	 * @param hardwareComponent
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/peripheral", consumes = "application/json")
 	public ResponseEntity<?> postPeripheral(
 			@RequestHeader(required = false) String classroom,
@@ -496,6 +503,7 @@ public class ReaktorAdministrationRest
 	 * @param trolley
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/screenshot")
 	public ResponseEntity<?> sendScreenshotOrder(
 			@RequestHeader(required = false) String classroom,
@@ -577,6 +585,7 @@ public class ReaktorAdministrationRest
 	 * @param softwareInstance
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
 	public ResponseEntity<?> sendSoftware(
 			@RequestHeader(required = false) String classroom,
@@ -661,6 +670,7 @@ public class ReaktorAdministrationRest
 	 * @param softwareInstance
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
 	public ResponseEntity<?> unistallSoftware(
 			@RequestHeader(required = false) String classroom,
@@ -742,6 +752,7 @@ public class ReaktorAdministrationRest
 	 * @param computerInstance
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.PUT, value = "/computer/edit")
 	public ResponseEntity<?> updateComputer(
 			@RequestHeader(required = true) String serialNumber,
@@ -868,6 +879,7 @@ public class ReaktorAdministrationRest
 	 * @param File         the execFile
 	 * @return ResponseEntity
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
 	public ResponseEntity<?> postComputerExecFile(
 			@RequestHeader(required = false) String serialNumber,
@@ -1032,6 +1044,7 @@ public class ReaktorAdministrationRest
 	 * @param trolley
 	 * @return
 	 */
+	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/computer/admin/screenshot", produces = "application/zip")
 	public ResponseEntity<?> getScreenshot(@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley)
