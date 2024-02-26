@@ -48,30 +48,24 @@ import lombok.extern.slf4j.Slf4j;
 public class ReaktorAdministrationRest
 {
 
-	/**
-	 * Attribute iTaskRepository
-	 */
+	/** Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Task	 */
 	@Autowired
 	private ITaskRepository iTaskRepository;
 
-	/**
-	 * Attribute iMotherboardRepository
-	 */
+	/**	Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Motherboard */
 	@Autowired
 	private IMotherboardRepository iMotherboardRepository;
 
-	/**
-	 * Attribute iActionRepository
-	 */
+	/** Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Action */ 	 
 	@Autowired
 	private IActionRepository iActionRepository;
 
 	/**
-	 * Method postComputerCommandLine
-	 * 
+	 * Endpoint que se encarga de asignarle a un ordenador por su serial number un fichero
+	 * de configuracion wifi usando el nombre del fichero de configuracion
 	 * @param serialNumber
 	 * @param wifiFile
-	 * @return
+	 * @return ok si el ordenador y el nombre del fichero esta bien formado, error si esta mal formado
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/wifiCfg")
@@ -81,28 +75,37 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			//Se obtiene un ordenador usando el repositorio y se comprueba mas adelante que exista
 			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
 			if (motherboardId.isEmpty())
 			{
-				String error = "Incorrect serial number";
-				ComputerError computerError = new ComputerError(404, error, null);
+				String error = "El serial number "+serialNumber+" no pertenece a ningun ordenador";
+				ComputerError computerError = new ComputerError(404, error);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-			
+			//Si el ordenador existe se obtiene la accion configWifi que contiene la tarea
+			//de asignar el fichero de configuracion wifi a un ordenador mas adelante se comprueba si existe la accion
 			Optional<Action> actionId = this.iActionRepository.findById("configWifi");
 
 			if (actionId.isPresent())
 			{
 				this.addTask(motherboardId.get(), actionId.get(), Constants.REAKTOR_CONFIG_EXEC_CONF_WIFI + File.separator + wifiFileName);
 			}
-
-			// --- RETURN OK RESPONSE ---
+			else
+			{
+				String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+						+ "o actualice el nombre de las acciones al fichero actionCSV";
+				ComputerError computerError = new ComputerError(500, error);
+				return ResponseEntity.status(500).body(computerError.toMap());
+			}
+			
+			//Devolvemos el estado satisfactorio de la operacion
 			return ResponseEntity.ok().build();
 
 		}
 		catch (Exception exception)
 		{
-			String error = "Error on openWeb admin";
+			String error = "Error de servidor, fallo al abrir la configuracion wifi del ordenador asignado";
 			log.error(error, exception);
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
@@ -111,11 +114,11 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method postComputerCommandLine
-	 * 
+	 * Endpoint que se encarga de asignarle al ordenador por su serial number un enlace web para
+	 * posteriormente abrirlo en el navegador web Chrome
 	 * @param serialNumber
 	 * @param webURL
-	 * @return
+	 * @return ok si el ordenador y la web estan bien formados, error si esta mal formado
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/chrome/openWeb")
@@ -125,30 +128,37 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			//Se obtiene un ordenador usando el repositorio y se comprueba mas adelante que exista
 			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
 			if (motherboardId.isEmpty())
 			{
-				String error = "Incorrect serial number";
-				ComputerError computerError = new ComputerError(404, error, null);
+				String error = "El serial number "+serialNumber+" no pertenece a ningun ordenador";
+				ComputerError computerError = new ComputerError(404, error);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
 
 			Optional<Action> actionId = this.iActionRepository.findById("openWeb");
 
-			// --- SI EL ACTION EXISTE , CREAREMOS LAS NUEVAS TASK---
+			// Si la accion existe creamos la tarea para abir el enlace web
 			if (actionId.isPresent())
 			{
-				// -- -CREAMOS TASKS ---
 				this.addTask(motherboardId.get(), actionId.get(), webURL);
 			}
+			else
+			{
+				String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+						+ "o actualice el nombre de las acciones al fichero actionCSV";
+				ComputerError computerError = new ComputerError(500, error);
+				return ResponseEntity.status(500).body(computerError.toMap());
+			}
 
-			// --- RETURN OK RESPONSE ---
+			//Devolvemos el estado satisfactorio de la operacion
 			return ResponseEntity.ok().build();
 
 		}
 		catch (Exception exception)
 		{
-			String error = "Error on openWeb admin";
+			String error = "Error de servidor, fallo al abrir el enlace web del ordenador asignado";
 			log.error(error, exception);
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
@@ -157,14 +167,16 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method sendInformation to send information of commands to computers
-	 *
-	 * @param serialNumber the serial number of computer
-	 * @param classroom    the classroom
-	 * @param trolley      the trolley
-	 * @param floor        the floor
-	 * @param commandLine  the commnadLine Object
-	 * @return ResponseEntity
+	 * Endpoint que manda a un ordenador o varios ordenadores una lista de comandos a ejecutar
+	 * los ordenadores o el ordenador se identifican por varios parametros en caso de que no se
+	 * envie ninguno se le asignara la lista de comandos a todos los ordenadores
+	 * 
+	 * @param serialNumber numero de serie del ordenador
+	 * @param classroom    clase en la que se encuentra
+	 * @param trolley      carrito al que pertenece
+	 * @param floor        planta en la que se encuentra el ordenador
+	 * @param commandLine  linea de comandos a ejecutar sobre el o los ordenadores
+	 * @return ok si los ordenadores existen y la linea de comandos esta bien formada, error si fallan
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/commandLine")
@@ -177,53 +189,40 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			// --- GETTING THE COMMAND BLOCK ----
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> commands = new HashSet<Motherboard>();
 
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				String methodsUsed = "";
-
-				if (serialNumber != null)
-				{
-					// ALL COMMANDS ON SPECIFIC COMPUTER BY serialNumber
-					this.addBySerialNumber(serialNumber, commands);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					// ALL COMMANDS ON SPECIFIC COMPUTER BY trolley
-					this.addByTrolley(trolley, commands);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ALL COMMANDS ON SPECIFIC COMPUTER BY classroom
-					this.addByClassroom(classroom, commands);
-					methodsUsed += "classroom,";
-				}
-				if (floor != null)
-				{
-					// ALL COMMANDS ON SPECIFIC COMPUTER BY floor
-					this.addByFloor(floor, commands);
-					methodsUsed += "floor,";
-				}
-				log.info("Parameters Used: " + methodsUsed);
-
+				this.checkAndSend(serialNumber, classroom, trolley, floor, commands);
+				
 				Optional<Action> actionId = this.iActionRepository.findById("command");
-
+				
 				if (actionId.isPresent())
 				{
 					this.addTasks(commands, actionId.get(), commandLine);
 				}
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 
-				// --- RETURN OK RESPONSE ---
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// COMMANDS RUN ON ALL COMPUTERS
+				//Mandamos los comandos por todos los ordenadores
 				this.addByAll(commands);
 				Optional<Action> actionId = this.iActionRepository.findById("command");
 
@@ -231,26 +230,37 @@ public class ReaktorAdministrationRest
 				{
 					this.addTasks(commands, actionId.get(), commandLine);
 				}
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 				log.info("By all Computers");
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la linea de comandos a los ordenadores";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Method shutdownComputers
+	 * Endpoint que manda a un ordenador o varios ordenadores una peticion para que se apaguen
+	 * los ordenadores o el ordenador se identifican por varios parametros en caso de que no se
+	 * envie ninguno se le asignara la peticion de apagado a todos los ordenadores
 	 * 
-	 * @param serialNumber
-	 * @param classroom
-	 * @param trolley
-	 * @param floor
-	 * @return
+	 * @param serialNumber numero de serie del ordenador
+	 * @param classroom    clase en la que se encuentra
+	 * @param trolley      carrito al que pertenece
+	 * @param floor        planta en la que se encuentra el ordenador
+	 * @return ok si los ordenadores existen, error si fallan
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/shutdown")
@@ -262,38 +272,19 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
 
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				String methodsUsed = "";
-
-				if (serialNumber != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY serialNumber
-					this.addBySerialNumber(serialNumber, shutdownList);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY trolley
-					this.addByTrolley(trolley, shutdownList);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY classroom
-					this.addByClassroom(classroom, shutdownList);
-					methodsUsed += "classroom,";
-				}
-				if (floor != null)
-				{
-					// SHUTDOWN SPECIFIC COMPUTER BY floor
-					this.addByFloor(floor, shutdownList);
-					methodsUsed += "floor,";
-				}
-				log.info("Parameters Used: " + methodsUsed);
+				this.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
 
 				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
 
@@ -301,12 +292,19 @@ public class ReaktorAdministrationRest
 				{
 					this.addTasks(shutdownList, actionId.get(), "");
 				}
-				// --- RETURN OK RESPONSE ---
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// SHUTDOWN ALL COMPUTERS
+				//Apagamos en todos los ordenadores
 				this.addByAll(shutdownList);
 				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
 
@@ -314,26 +312,36 @@ public class ReaktorAdministrationRest
 				{
 					this.addTasks(shutdownList, actionId.get(), "");
 				}
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de apagado a los ordenadores";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Method shutdownComputers
+	 * Endpoint que manda a un ordenador o varios ordenadores una peticion para que se reinicien
+	 * los ordenadores o el ordenador se identifican por varios parametros en caso de que no se
+	 * envie ninguno se le asignara la peticion de reinicio a todos los ordenadores
 	 * 
-	 * @param serialNumber
-	 * @param classroom
-	 * @param trolley
-	 * @param floor
-	 * @return
+	 * @param serialNumber numero de serie del ordenador
+	 * @param classroom    clase en la que se encuentra
+	 * @param trolley      carrito al que pertenece
+	 * @param floor        planta en la que se encuentra el ordenador
+	 * @return ok si los ordenadores existen, error si fallan
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/restart")
@@ -345,49 +353,34 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> restartList = new HashSet<Motherboard>();
 
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				String methodsUsed = "";
+				this.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
 
-				if (serialNumber != null)
-				{
-					// ADD  BY SERIAL NUMBER
-					this.addBySerialNumber(serialNumber, restartList);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					// ADD BY TROLLEY
-					this.addByTrolley(trolley, restartList);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ADD BY CLASSROOM 
-					this.addByClassroom(classroom, restartList);
-					methodsUsed += "classroom,";
-				}
-				if (floor != null)
-				{
-					// ADD BY FLOOR
-					this.addByFloor(floor, restartList);
-					methodsUsed += "floor,";
-				}
-				log.info("Parameters Used: " + methodsUsed);
-
-				// -- SACAMOS EL ACTIONS ---
 				Optional<Action> actionId = this.iActionRepository.findById("restart");
 
-				// -- -SI EL ACTION EXISTE CREAMOS TASKS --
 				if (actionId.isPresent())
 				{
-					// CREAMOS TASKS
 					this.addTasks(restartList, actionId.get(), "");
 				}
-				// --- RETURN OK RESPONSE ---
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
@@ -401,8 +394,14 @@ public class ReaktorAdministrationRest
 				// COMPROBACION
 				if (actionId.isPresent())
 				{
-					// CREAMOS
 					this.addTasks(restartList, actionId.get(), "");
+				}
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
@@ -410,8 +409,9 @@ public class ReaktorAdministrationRest
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de reinicio a los ordenadores";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
@@ -497,11 +497,14 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method sendScreenshotOrder
-	 * 
-	 * @param classroom
-	 * @param trolley
-	 * @return
+	 * Endpoint que manda a un ordenador o varios ordenadores una peticion para que sacar una
+	 * captura de pantalla los ordenadores o el ordenador se identifican por varios parametros 
+	 * en caso de que no se envie ninguno se le asignara la peticion de reinicio a todos los ordenadores
+	 *
+	 * @param classroom clase en el que se encuentra
+	 * @param trolley carrito al que pertenece
+	 * @param serialNumber numero de serie del ordenador
+	 * @return ok si los ordenadores existen, error si fallan
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/screenshot")
@@ -512,43 +515,34 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> screenshotList = new HashSet<Motherboard>();
 
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((classroom != null) || (trolley != null))
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
+			if ((classroom != null) || (trolley != null) || (serialNumber != null))
 			{
-				String methodsUsed = "";
-
-				if (serialNumber != null)
-				{
-					// ADD BY SERIALNUMBER
-					this.addBySerialNumber(serialNumber, screenshotList);
-					methodsUsed += "serialNumber,";
-				}
-				if (trolley != null)
-				{
-					// ADD BY TROLLEY
-					this.addByTrolley(trolley, screenshotList);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ADD BY CLASSROOM
-					this.addByClassroom(classroom, screenshotList);
-					methodsUsed += "classroom,";
-				}
-
-				log.info("Parameters Used: " + methodsUsed);
-				// BUSCAMOS LA ACCION
+				this.checkAndSend(serialNumber, classroom, trolley, null, screenshotList);
+				
 				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
 
-				// SI EXISTE
 				if (actionId.isPresent())
 				{
-					// CREAMOS LAS TAREAS
 					this.addTasks(screenshotList, actionId.get(), "");
 				}
-				// --- RETURN OK RESPONSE ---
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
@@ -565,14 +559,23 @@ public class ReaktorAdministrationRest
 					// CREAMOS TAREAS
 					this.addTasks(screenshotList, actionId.get(), "");
 				}
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 				log.info("By all Computers");
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de captura a los ordenadores";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
@@ -1244,5 +1247,56 @@ public class ReaktorAdministrationRest
 
 		// --- GUARDAMOS ---
 		this.iTaskRepository.saveAndFlush(task);
+	}
+	
+	/**
+	 * Metodo que se encarga de comprobar los parametros de los endpoints <br>
+	 * <br>
+	 * {@link #postComputerCommandLine(String, String, String, Integer, String)}<br>
+	 * <br>
+	 * {@link #putComputerShutdown(String, String, String, Integer)}<br>
+	 * <br>
+	 * {@link #putComputerRestart(String, String, String, Integer)}<br>
+	 * <br>
+	 * {@link #postComputerExecFile(String, String, String, Integer, String, MultipartFile)}<br>
+	 * <br>
+	 * {@link #sendScreenshotOrder(String, String, String)}<br>
+	 * <br>
+	 * para enviar y añadir al conjunto de ordenadores usando sus identificadores
+	 * @param serialNumber numero de serie del ordenador
+	 * @param classroom clase a la que pertenece
+	 * @param trolley carrito al que pertenece
+	 * @param floor planta en la que se encuentra
+	 * @param set conjunto que guarda los ordenadores
+	 */
+	private void checkAndSend(String serialNumber,String classroom,String trolley,Integer floor,Set<Motherboard> set)
+	{
+		String methodsUsed = "";
+
+		if (serialNumber != null)
+		{
+			//Se envia la linea de comandos por el numero de serie
+			this.addBySerialNumber(serialNumber, set);
+			methodsUsed += "serialNumber,";
+		}
+		if (trolley != null)
+		{
+			//Se envia la linea de comandos por carrito
+			this.addByTrolley(trolley, set);
+			methodsUsed += "trolley,";
+		}
+		if (classroom != null)
+		{
+			//Se envia la linea la linea de comandos por la clase
+			this.addByClassroom(classroom, set);
+			methodsUsed += "classroom,";
+		}
+		if (floor != null)
+		{
+			//Se envia la linea de comadnos por la planta
+			this.addByFloor(floor, set);
+			methodsUsed += "floor,";
+		}
+		log.info("Parameters Used: " + methodsUsed);
 	}
 }
