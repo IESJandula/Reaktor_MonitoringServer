@@ -281,7 +281,7 @@ public class ReaktorAdministrationRest
 			Set<Motherboard> shutdownList = new HashSet<Motherboard>();
 
 			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
-			//la linea de comandos a todos los ordenadores
+			//la peticion de apagado a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
@@ -362,7 +362,7 @@ public class ReaktorAdministrationRest
 			Set<Motherboard> restartList = new HashSet<Motherboard>();
 
 			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
-			//la linea de comandos a todos los ordenadores
+			//la peticion de reinicio a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
@@ -385,13 +385,10 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				// EN CASO DE TODOS , PONDREMOS ADD BY ALL 
 				this.addByAll(restartList);
 				
-				// MISMOS PASOS QUE ANTES , BUSCAMOS ACCION Y SI EXISTE LA PONDREMOS
 				Optional<Action> actionId = this.iActionRepository.findById("restart");
 
-				// COMPROBACION
 				if (actionId.isPresent())
 				{
 					this.addTasks(restartList, actionId.get(), "");
@@ -417,12 +414,15 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method postPeripheral
+	 * Metodo que manda una peticion para bloquear o activar dispositivos USB de varios
+	 * ordenadores para evitar colar dispositivos sospechosos, los ordenadores se identifican
+	 * por varios parametros en caso de que no se envie ninguno se enviara la peticion a todos
+	 * los ordenadores
 	 * 
-	 * @param classroom
-	 * @param trolley
-	 * @param hardwareComponent
-	 * @return ResponseEntity
+	 * @param classroom clase en la que se encuentra el ordenador
+	 * @param trolley carrito al que pertenece el ordenador
+	 * @param usb usb que posee el ordenador o ordenadores afectados
+	 * @return ResponseEntity ok si encuentra los ordenadores, error si fallan
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/peripheral", consumes = "application/json")
@@ -433,65 +433,63 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> motherboardList = new HashSet<Motherboard>();
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la peticion de bloqueo o desbloqueo a todos los ordenadores
 			if ((classroom != null) || (trolley != null))
 			{
-				String methodsUsed = "";
+				this.checkAndSend(trolley, classroom, null, motherboardList);
 
-				if (trolley != null)
-				{
-					List<Motherboard> list = this.iMotherboardRepository.findByTrolley(trolley);
-					motherboardList.addAll(list);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ON SPECIFIC COMPUTER BY classroom
-					List<Motherboard> list = this.iMotherboardRepository.findByClassroom(classroom);
-					motherboardList.addAll(list);
-					methodsUsed += "classroom,";
-				}
-
-				// BUSCAMOS LA ACCION
 				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
 
-				// SI EXISTE LA ACCION
 				if (action.isPresent())
 				{
-					// CREAMOS LAS TAREAS
 					this.addTasks(motherboardList, action.get(), usb.getId().toString());
 				}
-
-				log.info("Parameters Used: " + methodsUsed);
-				// --- RETURN OK RESPONSE ---
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// ON ALL COMPUTERS
 				List<Motherboard> list = this.iMotherboardRepository.findAll();
 				motherboardList.addAll(list);
 
-				// BUSCAMOS LA ACCION
 				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
 
-				// SI EXISTE 
 				if (action.isPresent())
 				{
-					// CREAMOS LAS TAREAS
 					this.addTasks(motherboardList, action.get(), usb.getId().toString());
 				}
-
+				else
+				{
+					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
+							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 				log.info("By all Computers");
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de bloqueo o desbloqueo de usb";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
@@ -547,16 +545,12 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				// CASO DE TODOS LOS EQUIPOS
 				this.addByAll(screenshotList);
 				
-				// BUSCAMOS ACCION
 				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
 
-				// SI EXISTE
 				if (actionId.isPresent())
 				{
-					// CREAMOS TAREAS
 					this.addTasks(screenshotList, actionId.get(), "");
 				}
 				else
@@ -581,12 +575,15 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method sendSoftware
+	 * Metodo que envia una peticion para instalar software en uno o varios ordenadores
+	 * los ordenadores se identifican por varios parametros en caso de que no se envie
+	 * ninguno se envia a todos los ordenadores
 	 * 
-	 * @param classroom
-	 * @param trolley
-	 * @param softwareInstance
-	 * @return
+	 * @param classroom clase en la que se encuentra
+	 * @param trolley carrito al que pertenece
+	 * @param professor profesor que dirije el ordenador
+	 * @param software software disponible para instalar
+	 * @return ok si encuentra los ordenadores, error si falla 
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
@@ -598,59 +595,39 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (professor != null))
 			{
-				String methodsUsed = "";
-
-				if (professor != null)
-				{
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "professor,";
-				}
-				if (trolley != null)
-				{
-					// ON SPECIFIC COMPUTER BY trolley
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ON SPECIFIC COMPUTER BY classroom
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "classroom,";
-				}
-
-				// BUSCAMOS ACCION
+				
+				this.checkAndSend(trolley, classroom, professor, motherboardSet);
+				
 				Optional<Action> action = this.iActionRepository.findById("install");
-				// SI EXISTE
+				
 				if (!action.isEmpty())
 				{
-					// CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
 				}
-
-				log.info("Parameters Used: " + methodsUsed);
-				// --- RETURN OK RESPONSE ---
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// ON ALL COMPUTERS
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
 				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
 				
-				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById("install");
-				// SI EXISTE
+				
 				if (!action.isEmpty())
 				{
-					// CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
 				}
 				return ResponseEntity.ok().build();
@@ -658,8 +635,9 @@ public class ReaktorAdministrationRest
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de instalacion de software";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
@@ -687,29 +665,7 @@ public class ReaktorAdministrationRest
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
 			if ((classroom != null) || (trolley != null))
 			{
-				String methodsUsed = "";
-
-				if (professor != null)
-				{
-					// ON SPECIFIC COMPUTER BY professor
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "professor,";
-				}
-				if (trolley != null)
-				{
-					// ON SPECIFIC COMPUTER BY trolley
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "trolley,";
-				}
-				if (classroom != null)
-				{
-					// ON SPECIFIC COMPUTER BY classroom
-					List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
-					motherboardSet.addAll(motherboardList);
-					methodsUsed += "classroom,";
-				}
+				
 				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById("uninstall");
 				
@@ -720,7 +676,6 @@ public class ReaktorAdministrationRest
 					this.addTasks(motherboardSet, action.get(), software);
 				}
 
-				log.info("Parameters Used: " + methodsUsed);
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
 			}
@@ -740,8 +695,9 @@ public class ReaktorAdministrationRest
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar la peticion de instalacion de software";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
@@ -1275,28 +1231,71 @@ public class ReaktorAdministrationRest
 
 		if (serialNumber != null)
 		{
-			//Se envia la linea de comandos por el numero de serie
+			//Se envia la peticion por el numero de serie
 			this.addBySerialNumber(serialNumber, set);
 			methodsUsed += "serialNumber,";
 		}
 		if (trolley != null)
 		{
-			//Se envia la linea de comandos por carrito
+			//Se envia la peticion por carrito
 			this.addByTrolley(trolley, set);
 			methodsUsed += "trolley,";
 		}
 		if (classroom != null)
 		{
-			//Se envia la linea la linea de comandos por la clase
+			//Se envia la peticion por la clase
 			this.addByClassroom(classroom, set);
 			methodsUsed += "classroom,";
 		}
 		if (floor != null)
 		{
-			//Se envia la linea de comadnos por la planta
+			//Se envia la peticion por la planta
 			this.addByFloor(floor, set);
 			methodsUsed += "floor,";
 		}
+		log.info("Parameters Used: " + methodsUsed);
+	}
+	
+	/**
+	 * Metodo sobrecargado que se encarga de comprobar los parametros de los endpoints <br>
+	 * {@link #postPeripheral(String, String, Usb)}<br>
+	 * <br>
+	 * {@link #unistallSoftware(String, String, String, String)}<br>
+	 * <br>
+	 * {@link #sendSoftware(String, String, String, String)}<br>
+	 * <br>
+	 * @param trolley carrito al que pertenece el ordenador
+	 * @param classroom clase enla que se encuentra
+	 * @param professor profesor que dirije el ordenador
+	 * @param set conjunto que guarda los ordenadores
+	 * @see original {@link #checkAndSend(String, String, String, Integer, Set)}
+	 */
+	private void checkAndSend(String trolley,String classroom,String professor,Set<Motherboard> set)
+	{
+		String methodsUsed = "";
+
+		if (professor != null)
+		{
+			//Se envia la peticion por el profesor
+			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
+			set.addAll(motherboardList);
+			methodsUsed += "professor,";
+		}
+		if (trolley != null)
+		{
+			//Se envia la peticion por el carrito
+			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
+			set.addAll(motherboardList);
+			methodsUsed += "trolley,";
+		}
+		if (classroom != null)
+		{
+			//Se envia la peticion por la clase
+			List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
+			set.addAll(motherboardList);
+			methodsUsed += "classroom,";
+		}
+		
 		log.info("Parameters Used: " + methodsUsed);
 	}
 }
