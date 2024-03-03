@@ -85,7 +85,7 @@ public class ReaktorAdministrationRest
 			}
 			//Si el ordenador existe se obtiene la accion configWifi que contiene la tarea
 			//de asignar el fichero de configuracion wifi a un ordenador mas adelante se comprueba si existe la accion
-			Optional<Action> actionId = this.iActionRepository.findById("configWifi");
+			Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_WIFI);
 
 			if (actionId.isPresent())
 			{
@@ -93,8 +93,7 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-						+ "o actualice el nombre de las acciones al fichero actionCSV";
+				String error = Constants.ERROR_FILE_CFG;
 				ComputerError computerError = new ComputerError(500, error);
 				return ResponseEntity.status(500).body(computerError.toMap());
 			}
@@ -137,7 +136,7 @@ public class ReaktorAdministrationRest
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
 
-			Optional<Action> actionId = this.iActionRepository.findById("openWeb");
+			Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_WEB);
 
 			// Si la accion existe creamos la tarea para abir el enlace web
 			if (actionId.isPresent())
@@ -146,8 +145,7 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-						+ "o actualice el nombre de las acciones al fichero actionCSV";
+				String error = Constants.ERROR_FILE_CFG;
 				ComputerError computerError = new ComputerError(500, error);
 				return ResponseEntity.status(500).body(computerError.toMap());
 			}
@@ -203,7 +201,7 @@ public class ReaktorAdministrationRest
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, floor, commands);
 				
-				Optional<Action> actionId = this.iActionRepository.findById("command");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_COMMANDS);
 				
 				if (actionId.isPresent())
 				{
@@ -211,8 +209,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -224,7 +221,7 @@ public class ReaktorAdministrationRest
 			{
 				//Mandamos los comandos por todos los ordenadores
 				this.addByAll(commands);
-				Optional<Action> actionId = this.iActionRepository.findById("command");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_COMMANDS);
 
 				if (actionId.isPresent())
 				{
@@ -232,8 +229,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -286,7 +282,7 @@ public class ReaktorAdministrationRest
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
 
-				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
 
 				if (actionId.isPresent())
 				{
@@ -294,8 +290,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -306,7 +301,7 @@ public class ReaktorAdministrationRest
 			{
 				//Apagamos en todos los ordenadores
 				this.addByAll(shutdownList);
-				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
 
 				if (actionId.isPresent())
 				{
@@ -314,8 +309,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -367,7 +361,7 @@ public class ReaktorAdministrationRest
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
 
-				Optional<Action> actionId = this.iActionRepository.findById("restart");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
 
 				if (actionId.isPresent())
 				{
@@ -375,8 +369,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -387,7 +380,7 @@ public class ReaktorAdministrationRest
 			{
 				this.addByAll(restartList);
 				
-				Optional<Action> actionId = this.iActionRepository.findById("restart");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
 
 				if (actionId.isPresent())
 				{
@@ -395,8 +388,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -446,7 +438,7 @@ public class ReaktorAdministrationRest
 			{
 				this.checkAndSend(trolley, classroom, null, motherboardList);
 
-				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_PERIPHERAL);
 
 				if (action.isPresent())
 				{
@@ -454,8 +446,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -467,7 +458,7 @@ public class ReaktorAdministrationRest
 				List<Motherboard> list = this.iMotherboardRepository.findAll();
 				motherboardList.addAll(list);
 
-				Optional<Action> action = this.iActionRepository.findById("postPeripheral");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_PERIPHERAL);
 
 				if (action.isPresent())
 				{
@@ -475,8 +466,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -527,7 +517,7 @@ public class ReaktorAdministrationRest
 			{
 				this.checkAndSend(serialNumber, classroom, trolley, null, screenshotList);
 				
-				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
 				if (actionId.isPresent())
 				{
@@ -535,8 +525,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -547,7 +536,7 @@ public class ReaktorAdministrationRest
 			{
 				this.addByAll(screenshotList);
 				
-				Optional<Action> actionId = this.iActionRepository.findById("screenshot");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
 				if (actionId.isPresent())
 				{
@@ -555,8 +544,7 @@ public class ReaktorAdministrationRest
 				}
 				else
 				{
-					String error = "La configuracion de la entidad action ha sido modificada, reestablezca la configuracion del fichero actionsCSV "
-							+ "o actualice el nombre de las acciones al fichero actionCSV";
+					String error = Constants.ERROR_FILE_CFG;
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
@@ -575,7 +563,7 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Metodo que envia una peticion para instalar software en uno o varios ordenadores
+	 * Endpoint que envia una peticion para instalar software en uno o varios ordenadores
 	 * los ordenadores se identifican por varios parametros en caso de que no se envie
 	 * ninguno se envia a todos los ordenadores
 	 * 
@@ -609,11 +597,17 @@ public class ReaktorAdministrationRest
 				
 				this.checkAndSend(trolley, classroom, professor, motherboardSet);
 				
-				Optional<Action> action = this.iActionRepository.findById("install");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_INSTALL);
 				
 				if (!action.isEmpty())
 				{
 					this.addTasks(motherboardSet, action.get(), software);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
@@ -624,11 +618,17 @@ public class ReaktorAdministrationRest
 				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
 				
-				Optional<Action> action = this.iActionRepository.findById("install");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_INSTALL);
 				
 				if (!action.isEmpty())
 				{
 					this.addTasks(motherboardSet, action.get(), software);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 				return ResponseEntity.ok().build();
 			}
@@ -643,13 +643,15 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method unistallSoftware
+	 * Endpoint que envia una peticion para desinstalar software en uno o varios ordenadores
+	 * los ordenadores se identifican por varios parametros en caso de que no se envie
+	 * ninguno se envia a todos los ordenadores
 	 * 
-	 * @param classroom
-	 * @param trolley
-	 * @param professor
-	 * @param softwareInstance
-	 * @return
+	 * @param classroom clase en la que se encuentra
+	 * @param trolley carrito al que pertenece
+	 * @param professor profesor que dirige el ordenador
+	 * @param software nombre del software a instalar
+	 * @return ok si encuentra los ordenadores, error si falla 
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
@@ -661,19 +663,31 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
-			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((classroom != null) || (trolley != null))
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
+			if ((classroom != null) || (trolley != null) || (professor!=null))
 			{
+				this.checkAndSend(trolley, classroom, professor, motherboardSet);
 				
 				// BUSCAMOS ACCION
-				Optional<Action> action = this.iActionRepository.findById("uninstall");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
 				
-				//SI EXISTE
 				if (!action.isEmpty())
 				{
-					//CREAMOS TAREAS
 					this.addTasks(motherboardSet, action.get(), software);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 
 				// --- RETURN OK RESPONSE ---
@@ -685,10 +699,16 @@ public class ReaktorAdministrationRest
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
 				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
-				Optional<Action> action = this.iActionRepository.findById("uninstall");
+				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
 				if (!action.isEmpty())
 				{
 					this.addTasks(motherboardSet, action.get(), software);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 				return ResponseEntity.ok().build();
 			}
@@ -703,13 +723,20 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method updateComputer
+	 * Endpoint que permite que el administrador pueda editar un ordenador identificandolo
+	 * mediante su numero de serie, los demás parametros se cambian automaticamente una vez
+	 * se identifique el ordenador
 	 * 
-	 * @param serialNumber
-	 * @param andaluciaId
-	 * @param computerNumber
-	 * @param computerInstance
-	 * @return ResponseEntity
+	 * @param serialNumber numero de serie original del ordenador
+	 * @param computerSerialNumber nuevo numero de serie
+	 * @param andaluciaId nuevo numero de andalucia del ordenador
+	 * @param computerNumber nueva pegatina identificativa del ordenador
+	 * @param classroom nueva clase
+	 * @param trolley nuevo carrito
+	 * @param teacher nuevo profesor
+	 * @param floor nueva planta
+	 * @param admin opcion de si es administrador o no
+	 * @return ok si la operacion ha sido un exito junto a la modificacion del ordenador o error si algun parametro falla
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.PUT, value = "/computer/edit")
@@ -884,7 +911,7 @@ public class ReaktorAdministrationRest
 				this.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
 				
 				// BUSCAMOS ACCION
-				Optional<Action> actionId = this.iActionRepository.findById("file");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
 				// SI EXISTE
 				if (actionId.isPresent())
@@ -899,7 +926,7 @@ public class ReaktorAdministrationRest
 			{
 				// COMMANDS RUN ON ALL COMPUTERS
 				this.addByAll(fileList);
-				Optional<Action> actionId = this.iActionRepository.findById("file");
+				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
 				if (actionId.isPresent())
 				{
