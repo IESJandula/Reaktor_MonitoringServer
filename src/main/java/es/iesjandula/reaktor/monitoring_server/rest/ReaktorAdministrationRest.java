@@ -1,16 +1,10 @@
 package es.iesjandula.reaktor.monitoring_server.rest;
 
-import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,12 +21,12 @@ import org.springframework.web.multipart.MultipartFile;
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Action;
 import es.iesjandula.reaktor.models.Motherboard;
-import es.iesjandula.reaktor.models.Task;
 import es.iesjandula.reaktor.models.Usb;
-import es.iesjandula.reaktor.models.Id.TaskId;
 import es.iesjandula.reaktor.monitoring_server.repository.IActionRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.repository.ITaskRepository;
+import es.iesjandula.reaktor.monitoring_server.utils.AdminChecker;
+import es.iesjandula.reaktor.monitoring_server.utils.AdminUtils;
 import es.iesjandula.reaktor.monitoring_server.utils.Constants;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
@@ -59,12 +53,28 @@ public class ReaktorAdministrationRest
 	/** Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Action */ 	 
 	@Autowired
 	private IActionRepository iActionRepository;
+	
+	/**Clase que almacena metodos para comprobar parametros */
+	private AdminChecker checker;
+	
+	/**Clase que almacena metodos que realizan acciones como añadir o mostrar ordenadores */
+	private AdminUtils utils;
+	
+	/**
+	 * Constructor que instancia la clase y que crea las clases AdminChecker y AdminUtils para 
+	 * la utilizacion de sus metodos
+	 */
+	public ReaktorAdministrationRest() 
+	{
+		this.checker = new AdminChecker(iMotherboardRepository);
+		this.utils = new AdminUtils();
+	}
 
 	/**
 	 * Endpoint que se encarga de asignarle a un ordenador por su serial number un fichero
 	 * de configuracion wifi usando el nombre del fichero de configuracion
-	 * @param serialNumber
-	 * @param wifiFile
+	 * @param serialNumber numero de serie del ordenador
+	 * @param wifiFile nombre del fichero de configuracion wifi
 	 * @return ok si el ordenador y el nombre del fichero esta bien formado, error si esta mal formado
 	 */
 	@Operation
@@ -89,7 +99,7 @@ public class ReaktorAdministrationRest
 
 			if (actionId.isPresent())
 			{
-				this.addTask(motherboardId.get(), actionId.get(), Constants.REAKTOR_CONFIG_EXEC_CONF_WIFI + File.separator + wifiFileName);
+				this.utils.addTask(motherboardId.get(), actionId.get(), Constants.REAKTOR_CONFIG_EXEC_CONF_WIFI + File.separator + wifiFileName,this.iTaskRepository);
 			}
 			else
 			{
@@ -115,8 +125,8 @@ public class ReaktorAdministrationRest
 	/**
 	 * Endpoint que se encarga de asignarle al ordenador por su serial number un enlace web para
 	 * posteriormente abrirlo en el navegador web Chrome
-	 * @param serialNumber
-	 * @param webURL
+	 * @param serialNumber numero de serie del ordenador
+	 * @param webURL url de la web a abrir
 	 * @return ok si el ordenador y la web estan bien formados, error si esta mal formado
 	 */
 	@Operation
@@ -141,7 +151,7 @@ public class ReaktorAdministrationRest
 			// Si la accion existe creamos la tarea para abir el enlace web
 			if (actionId.isPresent())
 			{
-				this.addTask(motherboardId.get(), actionId.get(), webURL);
+				this.utils.addTask(motherboardId.get(), actionId.get(), webURL,this.iTaskRepository);
 			}
 			else
 			{
@@ -199,13 +209,13 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				this.checkAndSend(serialNumber, classroom, trolley, floor, commands);
+				commands = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, commands);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_COMMANDS);
 				
 				if (actionId.isPresent())
 				{
-					this.addTasks(commands, actionId.get(), commandLine);
+					this.utils.addTasks(commands, actionId.get(), commandLine,this.iTaskRepository);
 				}
 				else
 				{
@@ -220,12 +230,12 @@ public class ReaktorAdministrationRest
 			else
 			{
 				//Mandamos los comandos por todos los ordenadores
-				this.addByAll(commands);
+				commands = this.utils.addByAll(commands,this.iMotherboardRepository);
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_COMMANDS);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(commands, actionId.get(), commandLine);
+					this.utils.addTasks(commands, actionId.get(), commandLine,this.iTaskRepository);
 				}
 				else
 				{
@@ -280,13 +290,13 @@ public class ReaktorAdministrationRest
 			//la peticion de apagado a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				this.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
+				shutdownList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
 
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get(), "");
+					this.utils.addTasks(shutdownList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -300,12 +310,12 @@ public class ReaktorAdministrationRest
 			else
 			{
 				//Apagamos en todos los ordenadores
-				this.addByAll(shutdownList);
+				shutdownList = this.utils.addByAll(shutdownList,this.iMotherboardRepository);
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(shutdownList, actionId.get(), "");
+					this.utils.addTasks(shutdownList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -359,13 +369,13 @@ public class ReaktorAdministrationRest
 			//la peticion de reinicio a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				this.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
+				restartList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
 
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(restartList, actionId.get(), "");
+					this.utils.addTasks(restartList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -378,13 +388,13 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				this.addByAll(restartList);
+				restartList = this.utils.addByAll(restartList,this.iMotherboardRepository);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(restartList, actionId.get(), "");
+					this.utils.addTasks(restartList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -436,13 +446,13 @@ public class ReaktorAdministrationRest
 			//la peticion de bloqueo o desbloqueo a todos los ordenadores
 			if ((classroom != null) || (trolley != null))
 			{
-				this.checkAndSend(trolley, classroom, null, motherboardList);
+				motherboardList = this.checker.checkAndSend(trolley, classroom, null, motherboardList);
 
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_PERIPHERAL);
 
 				if (action.isPresent())
 				{
-					this.addTasks(motherboardList, action.get(), usb.getId().toString());
+					this.utils.addTasks(motherboardList, action.get(), usb.getId().toString(),this.iTaskRepository);
 				}
 				else
 				{
@@ -462,7 +472,7 @@ public class ReaktorAdministrationRest
 
 				if (action.isPresent())
 				{
-					this.addTasks(motherboardList, action.get(), usb.getId().toString());
+					this.utils.addTasks(motherboardList, action.get(), usb.getId().toString(),this.iTaskRepository);
 				}
 				else
 				{
@@ -515,13 +525,13 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (serialNumber != null))
 			{
-				this.checkAndSend(serialNumber, classroom, trolley, null, screenshotList);
+				screenshotList = this.checker.checkAndSend(serialNumber, classroom, trolley, null, screenshotList);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(screenshotList, actionId.get(), "");
+					this.utils.addTasks(screenshotList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -534,13 +544,13 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				this.addByAll(screenshotList);
+				screenshotList = this.utils.addByAll(screenshotList,this.iMotherboardRepository);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(screenshotList, actionId.get(), "");
+					this.utils.addTasks(screenshotList, actionId.get(), "",this.iTaskRepository);
 				}
 				else
 				{
@@ -595,13 +605,13 @@ public class ReaktorAdministrationRest
 			if ((classroom != null) || (trolley != null) || (professor != null))
 			{
 				
-				this.checkAndSend(trolley, classroom, professor, motherboardSet);
+				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet);
 				
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_INSTALL);
 				
 				if (!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get(), software);
+					this.utils.addTasks(motherboardSet, action.get(), software,this.iTaskRepository);
 				}
 				else
 				{
@@ -622,7 +632,7 @@ public class ReaktorAdministrationRest
 				
 				if (!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get(), software);
+					this.utils.addTasks(motherboardSet, action.get(), software,this.iTaskRepository);
 				}
 				else
 				{
@@ -676,14 +686,14 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (professor!=null))
 			{
-				this.checkAndSend(trolley, classroom, professor, motherboardSet);
+				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet);
 				
 				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
 				
 				if (!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get(), software);
+					this.utils.addTasks(motherboardSet, action.get(), software,this.iTaskRepository);
 				}
 				else
 				{
@@ -703,7 +713,7 @@ public class ReaktorAdministrationRest
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
 				if (!action.isEmpty())
 				{
-					this.addTasks(motherboardSet, action.get(), software);
+					this.utils.addTasks(motherboardSet, action.get(), software,this.iTaskRepository);
 				}
 				else
 				{
@@ -785,7 +795,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), computerSerialNumber);
+					this.utils.addTask(motherboardId.get(), action.get(), computerSerialNumber,this.iTaskRepository);
 				}
 				else
 				{
@@ -800,7 +810,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), andaluciaId);
+					this.utils.addTask(motherboardId.get(), action.get(), andaluciaId,this.iTaskRepository);
 				}
 				else
 				{
@@ -815,7 +825,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), computerNumber);
+					this.utils.addTask(motherboardId.get(), action.get(), computerNumber,this.iTaskRepository);
 				}
 				else
 				{
@@ -830,7 +840,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), teacher);
+					this.utils.addTask(motherboardId.get(), action.get(), teacher,this.iTaskRepository);
 				}
 				else
 				{
@@ -845,7 +855,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), trolley);
+					this.utils.addTask(motherboardId.get(), action.get(), trolley,this.iTaskRepository);
 				}
 				else
 				{
@@ -860,7 +870,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), classroom);
+					this.utils.addTask(motherboardId.get(), action.get(), classroom,this.iTaskRepository);
 				}
 				else
 				{
@@ -875,7 +885,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), floor.toString());
+					this.utils.addTask(motherboardId.get(), action.get(), floor.toString(),this.iTaskRepository);
 				}
 				else
 				{
@@ -890,7 +900,7 @@ public class ReaktorAdministrationRest
 				
 				if (action.isPresent())
 				{
-					addTask(motherboardId.get(), action.get(), admin.toString());
+					this.utils.addTask(motherboardId.get(), action.get(), admin.toString(),this.iTaskRepository);
 				}
 				else
 				{
@@ -949,16 +959,16 @@ public class ReaktorAdministrationRest
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 
-				this.checkAndSend(serialNumber, classroom, trolley, floor, fileList);
+				fileList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, fileList);
 
 				//Guardamos el fichero en src/main/resources/reaktor_config/files
-				this.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
+				this.utils.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName);
+					this.utils.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName,this.iTaskRepository);
 				}
 				else
 				{
@@ -971,12 +981,12 @@ public class ReaktorAdministrationRest
 			}
 			else
 			{
-				this.addByAll(fileList);
+				fileList = this.utils.addByAll(fileList,this.iMotherboardRepository);
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
 				if (actionId.isPresent())
 				{
-					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + execFile.getName());
+					this.utils.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + execFile.getName(),this.iTaskRepository);
 				}
 				else
 				{
@@ -999,70 +1009,11 @@ public class ReaktorAdministrationRest
 	}
 
 	/**
-	 * Method writeText
-	 * 
-	 * @param name
-	 * @param content
-	 */
-	public void writeText(String name, byte[] content)
-	{
-		// DELCARAMOS FLUJOS
-		FileOutputStream fileOutputStream = null;
-		DataOutputStream dataOutputStream = null;
-
-		try
-		{
-			// CREAMOS LOS FLUJOS
-			fileOutputStream = new FileOutputStream(name);
-			dataOutputStream = new DataOutputStream(fileOutputStream);
-			
-			// GUARDAMOS EL FICHERO
-			dataOutputStream.write(content);
-			// HACEMOS FLUSH
-			dataOutputStream.flush();
-
-		}
-		catch (IOException exception)
-		{
-			String message = "Error";
-			log.error(message, exception);
-		}
-		finally
-		{
-			if (dataOutputStream != null)
-			{
-				try
-				{
-					dataOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-
-			if (fileOutputStream != null)
-			{
-				try
-				{
-					fileOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Method handleTypeMismatch method for the spring interal input mismatch
-	 * parameter
+	 * Metodo que permite controlar las excepciones generadas en springboot para indicar al usuario
+	 * errores de insercion de parametros por ejemplo un parametro entero se pasa como string
 	 *
-	 * @param MethodArgumentTypeMismatchException exception
-	 * @return ResponseEntity
+	 * @param MethodArgumentTypeMismatchException excepecion generada de springboot
+	 * @return informacion de la excepcion generada
 	 */
 	@ExceptionHandler(MethodArgumentTypeMismatchException.class)
 	public ResponseEntity<?> handleTypeMismatch(MethodArgumentTypeMismatchException exception)
@@ -1074,309 +1025,5 @@ public class ReaktorAdministrationRest
 		log.error(message);
 		ComputerError computerError = new ComputerError(404, message, exception);
 		return ResponseEntity.status(404).body(computerError.toMap());
-	}
-
-	/**
-	 * Method getComputer
-	 * 
-	 * @author Adrian
-	 * @param classroom
-	 * @param trolley
-	 * @return
-	 */
-	@Operation
-	@RequestMapping(method = RequestMethod.GET, value = "/computer/admin/screenshot", produces = "application/zip")
-	public ResponseEntity<?> getScreenshot(@RequestHeader(required = false) String classroom,
-			@RequestHeader(required = false) String trolley)
-	{
-		try
-		{
-			if (classroom.isEmpty() && trolley.isEmpty())
-			{
-				this.checkParams(classroom, trolley);
-
-				File zipFile = this.getZipFile(classroom, trolley);
-			}
-			return ResponseEntity.ok().build();
-		}
-		catch (ComputerError error)
-		{
-			return ResponseEntity.status(400).body(error.getMessage());
-		}
-		catch (Exception error)
-		{
-			return ResponseEntity.status(500).body(error.getMessage());
-		}
-	}
-
-	/**
-	 * Method checkParams
-	 * 
-	 * @author Adrian
-	 * @param classroom
-	 * @param trolley
-	 * @throws ComputerError
-	 */
-	private void checkParams(String classroom, String trolley) throws ComputerError
-	{
-		if (classroom.isEmpty() && trolley.isEmpty())
-		{
-			throw new ComputerError(400, "Error", null);
-		}
-	}
-
-	/**
-	 * Method getZipFile
-	 * 
-	 * @author Adrian
-	 * @param classroom
-	 * @param trolley
-	 * @return
-	 * @throws Exception
-	 */
-	private File getZipFile(String classroom, String trolley) throws Exception
-	{
-
-		File zipFile = File.createTempFile("screenshots", ".zip");
-		try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(zipFile)))
-		{
-			zipOutputStream.putNextEntry(new ZipEntry("screenshot.png"));
-			zipOutputStream.write("Contenido de la captura de pantalla".getBytes());
-			zipOutputStream.closeEntry();
-		}
-		return zipFile;
-	}
-
-	/**
-	 * Method addByAll
-	 * 
-	 * @param motherboardList
-	 */
-	private void addByAll(Set<Motherboard> motherboardList)
-	{
-		List<Motherboard> motherboardId = this.iMotherboardRepository.findAll();
-		motherboardList.addAll(motherboardId);
-	}
-
-	/**
-	 * Method addByClassroom
-	 * 
-	 * @param classroom
-	 * @param motherboardList
-	 */
-	private void addByClassroom(String classroom, Set<Motherboard> motherboardList)
-	{
-		List<Motherboard> motherboardId = this.iMotherboardRepository.findByClassroom(classroom);
-		motherboardList.addAll(motherboardId);
-	}
-
-	/**
-	 * Method addByTrolley
-	 * 
-	 * @param trolley
-	 * @param motherboardList
-	 */
-	private void addByTrolley(String trolley, Set<Motherboard> motherboardList)
-	{
-		List<Motherboard> motherboardId = this.iMotherboardRepository.findByTrolley(trolley);
-		motherboardList.addAll(motherboardId);
-	}
-
-	/**
-	 * Method addByfloor
-	 * 
-	 * @param floor
-	 * @param motherboardList
-	 */
-	private void addByFloor(int floor, Set<Motherboard> motherboardList)
-	{
-		List<Motherboard> motherboardId = this.iMotherboardRepository.findByFloor(floor);
-		motherboardList.addAll(motherboardId);
-	}
-
-	/**
-	 * Method addBySerialNumber
-	 * 
-	 * @param serialNumber
-	 * @param motherboardList
-	 */
-	private void addBySerialNumber(String serialNumber, Set<Motherboard> motherboardList)
-	{
-		Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
-		if (motherboardId.isPresent())
-		{
-			motherboardList.add(motherboardId.get());
-		}
-	}
-
-	/**
-	 * Method addTasks
-	 * 
-	 * @param motherboardList
-	 * @param action
-	 */
-	private void addTasks(Set<Motherboard> motherboardList, Action action, String info)
-	{
-		// SACAMOS LA FECHA ACTUAL
-		Date date = new Date();
-		
-		// --- POR CADA PC EN LA LISTA , CREAREMOS SU TAREA ---
-		for (Motherboard motherboard : motherboardList)
-		{
-			// -- -CREAMOS LA TASK ---
-			Task task = new Task();
-			// --- CREAMOS LA ID DE LA TASK --
-			TaskId taskId = new TaskId();
-
-			// --- PONEMOS EL NOMBRE DE LA ACCION (TASK)---
-			taskId.setActionName(action.getName());
-			
-			// --- PONEMOS LA DATE ---
-			taskId.setDate(date);
-			
-			// --- PONEMOS EL SERIALNUMBER ---
-			taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());
-
-			// ARMAMOS EL TASK CON TODO LO ANTERIOR ---
-			task.setTaskId(taskId);
-			task.setAction(action);
-			task.setMotherboard(motherboard);
-			// --- PONEMOS EL INFO NECESARIO
-			task.setInfo(info);
-			
-			// PONEMOS EN ESTADO DE TODO
-			task.setStatus(Action.STATUS_TODO);
-
-			// --- GUARDAMOS ---
-			this.iTaskRepository.saveAndFlush(task);
-		}
-	}
-	
-	private void addTask(Motherboard motherboard, Action action, String info) 
-	{
-		
-		// SACAMOS LA FECHA ACTUAL
-		Date date = new Date();
-		
-		// -- -CREAMOS LA TASK ---
-		Task task = new Task();
-		// --- CREAMOS LA ID DE LA TASK --
-		TaskId taskId = new TaskId();
-
-		// --- PONEMOS EL NOMBRE DE LA ACCION (TASK)---
-		taskId.setActionName(action.getName());
-		
-		// --- PONEMOS LA DATE ---
-		taskId.setDate(date);
-		
-		// --- PONEMOS EL SERIALNUMBER ---
-		taskId.setSerialNumber(motherboard.getMotherBoardSerialNumber());
-
-		// ARMAMOS EL TASK CON TODO LO ANTERIOR ---
-		task.setTaskId(taskId);
-		task.setAction(action);
-		task.setMotherboard(motherboard);
-		// --- PONEMOS EL INFO NECESARIO
-		task.setInfo(info);
-		
-		// PONEMOS EN ESTADO DE TODO
-		task.setStatus(Action.STATUS_TODO);
-
-		// --- GUARDAMOS ---
-		this.iTaskRepository.saveAndFlush(task);
-	}
-	
-	/**
-	 * Metodo que se encarga de comprobar los parametros de los endpoints <br>
-	 * <br>
-	 * {@link #postComputerCommandLine(String, String, String, Integer, String)}<br>
-	 * <br>
-	 * {@link #putComputerShutdown(String, String, String, Integer)}<br>
-	 * <br>
-	 * {@link #putComputerRestart(String, String, String, Integer)}<br>
-	 * <br>
-	 * {@link #postComputerExecFile(String, String, String, Integer, String, MultipartFile)}<br>
-	 * <br>
-	 * {@link #sendScreenshotOrder(String, String, String)}<br>
-	 * <br>
-	 * para enviar y añadir al conjunto de ordenadores usando sus identificadores
-	 * @param serialNumber numero de serie del ordenador
-	 * @param classroom clase a la que pertenece
-	 * @param trolley carrito al que pertenece
-	 * @param floor planta en la que se encuentra
-	 * @param set conjunto que guarda los ordenadores
-	 */
-	private void checkAndSend(String serialNumber,String classroom,String trolley,Integer floor,Set<Motherboard> set)
-	{
-		String methodsUsed = "";
-
-		if (serialNumber != null)
-		{
-			//Se envia la peticion por el numero de serie
-			this.addBySerialNumber(serialNumber, set);
-			methodsUsed += "serialNumber,";
-		}
-		if (trolley != null)
-		{
-			//Se envia la peticion por carrito
-			this.addByTrolley(trolley, set);
-			methodsUsed += "trolley,";
-		}
-		if (classroom != null)
-		{
-			//Se envia la peticion por la clase
-			this.addByClassroom(classroom, set);
-			methodsUsed += "classroom,";
-		}
-		if (floor != null)
-		{
-			//Se envia la peticion por la planta
-			this.addByFloor(floor, set);
-			methodsUsed += "floor,";
-		}
-		log.info("Parameters Used: " + methodsUsed);
-	}
-	
-	/**
-	 * Metodo sobrecargado que se encarga de comprobar los parametros de los endpoints <br>
-	 * {@link #postPeripheral(String, String, Usb)}<br>
-	 * <br>
-	 * {@link #unistallSoftware(String, String, String, String)}<br>
-	 * <br>
-	 * {@link #sendSoftware(String, String, String, String)}<br>
-	 * <br>
-	 * @param trolley carrito al que pertenece el ordenador
-	 * @param classroom clase enla que se encuentra
-	 * @param professor profesor que dirije el ordenador
-	 * @param set conjunto que guarda los ordenadores
-	 * @see original {@link #checkAndSend(String, String, String, Integer, Set)}
-	 */
-	private void checkAndSend(String trolley,String classroom,String professor,Set<Motherboard> set)
-	{
-		String methodsUsed = "";
-
-		if (professor != null)
-		{
-			//Se envia la peticion por el profesor
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
-			set.addAll(motherboardList);
-			methodsUsed += "professor,";
-		}
-		if (trolley != null)
-		{
-			//Se envia la peticion por el carrito
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
-			set.addAll(motherboardList);
-			methodsUsed += "trolley,";
-		}
-		if (classroom != null)
-		{
-			//Se envia la peticion por la clase
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
-			set.addAll(motherboardList);
-			methodsUsed += "classroom,";
-		}
-		
-		log.info("Parameters Used: " + methodsUsed);
 	}
 }
