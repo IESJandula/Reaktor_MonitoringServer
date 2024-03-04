@@ -630,6 +630,8 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
+				//Devolvemos el estado satisfactorio de la operacion
+
 				return ResponseEntity.ok().build();
 			}
 		}
@@ -690,12 +692,11 @@ public class ReaktorAdministrationRest
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 
-				// --- RETURN OK RESPONSE ---
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// ON ALL COMPUTERS
 				List<Motherboard> motherboardList = this.iMotherboardRepository.findAll();
 				motherboardSet.addAll(motherboardList);
 				log.info("By all Computers");
@@ -710,12 +711,13 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			String error = "Error de servidor, fallo al mandar la peticion de instalacion de software";
+			String error = "Error de servidor, fallo al mandar la peticion de desinstalacion de software";
 			log.error(error,exception);
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
@@ -753,22 +755,27 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
-			
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Optional<Motherboard> motherboardId = this.iMotherboardRepository.findById(serialNumber);
+			//Se comprueba si existe la placa base a editar
 			if (motherboardId.isEmpty())
 			{
-				String error = "Incorrect serial number";
-				ComputerError computerError = new ComputerError(404, error, null);
+				String error = "El numero de serie "+serialNumber+" introducido no pertenece a ningun ordenador";
+				ComputerError computerError = new ComputerError(404, error);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
-			
+			//Se comprueba que todos los parametros no esten vacios
 			if ((computerSerialNumber == null) && (andaluciaId == null) && (computerNumber == null) 
 					&& (classroom == null) && (trolley == null) && (teacher == null) && (floor == null)
 					&& (admin == null))
 			{
-				// ALL COMPUTERS
-				String error = "No parameters selected";
-				ComputerError computerError = new ComputerError(404, error, null);
+				String error = "No se ha introducido ningun atributo nuevo a editar en el ordenador encontrado";
+				ComputerError computerError = new ComputerError(404, error);
 				return ResponseEntity.status(404).body(computerError.toMap());
 			}
 
@@ -780,6 +787,12 @@ public class ReaktorAdministrationRest
 				{
 					addTask(motherboardId.get(), action.get(), computerSerialNumber);
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 			}
 			if (andaluciaId != null)
 			{
@@ -788,6 +801,12 @@ public class ReaktorAdministrationRest
 				if (action.isPresent())
 				{
 					addTask(motherboardId.get(), action.get(), andaluciaId);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 			}
 			if (computerNumber != null)
@@ -798,6 +817,12 @@ public class ReaktorAdministrationRest
 				{
 					addTask(motherboardId.get(), action.get(), computerNumber);
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 			}
 			if (teacher != null)
 			{
@@ -806,6 +831,12 @@ public class ReaktorAdministrationRest
 				if (action.isPresent())
 				{
 					addTask(motherboardId.get(), action.get(), teacher);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 			}
 			if (trolley != null)
@@ -816,6 +847,12 @@ public class ReaktorAdministrationRest
 				{
 					addTask(motherboardId.get(), action.get(), trolley);
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 			}
 			if (classroom != null)
 			{
@@ -824,6 +861,12 @@ public class ReaktorAdministrationRest
 				if (action.isPresent())
 				{
 					addTask(motherboardId.get(), action.get(), classroom);
+				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 			}
 			if (floor != null)
@@ -834,6 +877,12 @@ public class ReaktorAdministrationRest
 				{
 					addTask(motherboardId.get(), action.get(), floor.toString());
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 			}
 			if (admin != null)
 			{
@@ -843,27 +892,38 @@ public class ReaktorAdministrationRest
 				{
 					addTask(motherboardId.get(), action.get(), admin.toString());
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
 			}
-			// --- RETURN OK RESPONSE ---
+			//Devolvemos el estado satisfactorio de la operacion
 			return ResponseEntity.ok().build();
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al editar los atributos del ordenador "+serialNumber;
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Method sendInformation to send information of commands to computers
-	 *
-	 * @param serialNumber the serial number of computer
-	 * @param classroom    the classroom
-	 * @param trolley      the trolley
-	 * @param floor        the floor
-	 * @param File         the execFile
-	 * @return ResponseEntity
+	 * Endpoint que manda un fichero de configuracion,ejecutable o general a uno o varios ordenadores
+	 * este fichero se guarda en el servidor en una carpeta a la altura de src/main/resources/reaktor_config/files
+	 * y se almacena hasta que se descargue en el ordenador solicitado, el ordenador se identifica por varios parametros
+	 * si todos los parametros estan vacios el fichero se manda a todos los ordenadores
+	 * 
+	 * @param serialNumber numero de serie del ordenador
+	 * @param classroom clase en la que se encuentra
+	 * @param trolley carrito al que pertenece
+	 * @param floor planta en la que se encuentra
+	 * @param fileName nombre del fichero
+	 * @param execFile fichero a mandar para guardar en servidor
+	 * @return ok si ha encontrado los ordenadores y si el fichero se ha guardado, mal si falla la busqueda de ordenadores o el guardado del fichero
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/file", consumes = "multipart/form-data")
@@ -877,54 +937,40 @@ public class ReaktorAdministrationRest
 	{
 		try
 		{
+			/*
+			 * Se instancia un conjunto de ordenadores (vacio al principio) para guardar ordenadores
+			 * y evitar que estos se repitan, ya que se usan parametros que permiten la repeticion de
+			 * los ordenadores, por ejemplo un ordenador puede ser el mismo si se encuentra en la planta 1
+			 * y la clase introducida esta en la planta 1
+			 */
 			Set<Motherboard> fileList = new HashSet<Motherboard>();
+			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
+			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 
-				if (serialNumber != null)
-				{
-					// ALL FILE ON SPECIFIC COMPUTER BY serialNumber
-					this.addBySerialNumber(serialNumber, fileList);
+				this.checkAndSend(serialNumber, classroom, trolley, floor, fileList);
 
-				}
-				if (trolley != null)
-				{
-					// ALL FILE ON SPECIFIC COMPUTER BY trolley
-					this.addByTrolley(trolley, fileList);
-
-				}
-				if (classroom != null)
-				{
-					// ALL FILE ON SPECIFIC COMPUTER BY classroom
-					this.addByClassroom(classroom, fileList);
-
-				}
-				if (floor != null)
-				{
-					// ALL FILE ON SPECIFIC COMPUTER BY floor
-					this.addByFloor(floor, fileList);
-
-				}
-				// --- RETURN OK RESPONSE ---
-
-				// --- RECOGEMOS EL FICHERO QUE NOS MANDAN Y LO GUARDAMOS EN LA CARPETA FILES
+				//Guardamos el fichero en src/main/resources/reaktor_config/files
 				this.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
 				
-				// BUSCAMOS ACCION
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
-				// SI EXISTE
 				if (actionId.isPresent())
 				{
-					// CREAMOS ACCION CON LA RUTA DEL FICHERO
 					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName);
 				}
-
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
 			{
-				// COMMANDS RUN ON ALL COMPUTERS
 				this.addByAll(fileList);
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
@@ -932,13 +978,21 @@ public class ReaktorAdministrationRest
 				{
 					this.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + execFile.getName());
 				}
+				else
+				{
+					String error = Constants.ERROR_FILE_CFG;
+					ComputerError computerError = new ComputerError(500, error);
+					return ResponseEntity.status(500).body(computerError.toMap());
+				}
+				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage(), exception);
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error de servidor, fallo al mandar el fichero "+fileName;
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 
