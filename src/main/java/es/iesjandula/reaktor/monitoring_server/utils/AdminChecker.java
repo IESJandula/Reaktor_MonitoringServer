@@ -1,10 +1,11 @@
 package es.iesjandula.reaktor.monitoring_server.utils;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.log;
 
 import java.util.List;
 import java.util.Set;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.web.multipart.MultipartFile;
 
 import es.iesjandula.reaktor.models.Motherboard;
@@ -16,6 +17,8 @@ import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository
  */
 public class AdminChecker 
 {
+	/**Logger dela clase */
+	private static Logger log = LogManager.getLogger();
 	/**Clase admin utils que contiene los metodos de añadir atributos */
 	private  AdminUtils utils;
 	/**Repositorio que realiza las acciones CRUD sobre la entidad Motherboard */
@@ -51,36 +54,38 @@ public class AdminChecker
 	 * @param trolley carrito al que pertenece
 	 * @param floor planta en la que se encuentra
 	 * @param set conjunto que guarda los ordenadores
+	 * @return El conunto de ordenadores actualizado
 	 */
-	public void checkAndSend(String serialNumber,String classroom,String trolley,Integer floor,Set<Motherboard> set)
+	public Set<Motherboard> checkAndSend(String serialNumber,String classroom,String trolley,Integer floor,Set<Motherboard> set)
 	{
 		String methodsUsed = "";
 
 		if (serialNumber != null)
 		{
 			//Se envia la peticion por el numero de serie
-			utils.addBySerialNumber(serialNumber, set,this.motherboardRepository);
+			set = utils.addBySerialNumber(serialNumber, set,this.motherboardRepository);
 			methodsUsed += "serialNumber,";
 		}
 		if (trolley != null)
 		{
 			//Se envia la peticion por carrito
-			utils.addByTrolley(trolley, set,this.motherboardRepository);
+			set = utils.addByTrolley(trolley, set,this.motherboardRepository);
 			methodsUsed += "trolley,";
 		}
 		if (classroom != null)
 		{
 			//Se envia la peticion por la clase
-			utils.addByClassroom(classroom, set,this.motherboardRepository);
+			set = utils.addByClassroom(classroom, set,this.motherboardRepository);
 			methodsUsed += "classroom,";
 		}
 		if (floor != null)
 		{
 			//Se envia la peticion por la planta
-			utils.addByFloor(floor, set,this.motherboardRepository);
+			set = utils.addByFloor(floor, set,this.motherboardRepository);
 			methodsUsed += "floor,";
 		}
-		//log.info("Parameters Used: " + methodsUsed);
+		log.info("Parameters Used: " + methodsUsed);
+		return set;
 	}
 	
 	/**
@@ -97,32 +102,32 @@ public class AdminChecker
 	 * @param set conjunto que guarda los ordenadores
 	 * @see original {@link #checkAndSend(String, String, String, Integer, Set)}
 	 */
-	public void checkAndSend(String trolley,String classroom,String professor,Set<Motherboard> set)
+	public Set<Motherboard> checkAndSend(String trolley,String classroom,String professor,Set<Motherboard> set)
 	{
 		String methodsUsed = "";
 
 		if (professor != null)
 		{
 			//Se envia la peticion por el profesor
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
+			List<Motherboard> motherboardList = this.motherboardRepository.findByTeacher(professor);
 			set.addAll(motherboardList);
 			methodsUsed += "professor,";
 		}
 		if (trolley != null)
 		{
 			//Se envia la peticion por el carrito
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByTrolley(trolley);
+			List<Motherboard> motherboardList = this.motherboardRepository.findByTrolley(trolley);
 			set.addAll(motherboardList);
 			methodsUsed += "trolley,";
 		}
 		if (classroom != null)
 		{
 			//Se envia la peticion por la clase
-			List<Motherboard> motherboardList = this.iMotherboardRepository.findByClassroom(classroom);
+			List<Motherboard> motherboardList = this.motherboardRepository.findByClassroom(classroom);
 			set.addAll(motherboardList);
 			methodsUsed += "classroom,";
 		}
-		
-		//log.info("Parameters Used: " + methodsUsed);
+		log.info("Parameters Used: " + methodsUsed);
+		return set;
 	}
 }
