@@ -301,11 +301,23 @@ public class ReaktorAdministrationRest
 				{
 					this.addTasks(shutdownList, actionId.get(), "");
 				}
+				
+				// --- CONTROL FOR NOT SHUTDOWN ALL COMPUTERS ----
+				if(shutdownList.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
 			}
+			
 			else
 			{
+				/*
 				// SHUTDOWN ALL COMPUTERS
 				this.addByAll(shutdownList);
 				Optional<Action> actionId = this.iActionRepository.findById("shutdown");
@@ -316,6 +328,11 @@ public class ReaktorAdministrationRest
 				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
+				*/
+				String error = "Error no parameters found";
+				log.error(error);
+				ComputerError computerError = new ComputerError(400, error, null);
+				return ResponseEntity.status(400).body(computerError.toMap());
 			}
 		}
 		catch (Exception exception)
@@ -387,11 +404,23 @@ public class ReaktorAdministrationRest
 					// CREAMOS TASKS
 					this.addTasks(restartList, actionId.get(), "");
 				}
+				
+				// --- CONTROL FOR NOT SHUTDOWN ALL COMPUTERS ----
+				if(restartList.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
 			}
+			
 			else
 			{
+				/*
 				// EN CASO DE TODOS , PONDREMOS ADD BY ALL 
 				this.addByAll(restartList);
 				
@@ -406,6 +435,12 @@ public class ReaktorAdministrationRest
 				}
 				log.info("By all Computers");
 				return ResponseEntity.ok().build();
+				*/
+				
+				String error = "Error no parameters found";
+				log.error(error);
+				ComputerError computerError = new ComputerError(400, error, null);
+				return ResponseEntity.status(400).body(computerError.toMap());
 			}
 		}
 		catch (Exception exception)
@@ -588,6 +623,7 @@ public class ReaktorAdministrationRest
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
 	public ResponseEntity<?> sendSoftware(
+			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
 			@RequestHeader(required = false) String professor,
@@ -597,10 +633,16 @@ public class ReaktorAdministrationRest
 		{
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((classroom != null) || (trolley != null) || (professor != null))
+			if ((serialNumber != null)||(classroom != null) || (trolley != null) || (professor != null))
 			{
 				String methodsUsed = "";
 
+				if (serialNumber != null)
+				{
+					// BY serialNumber
+					this.addBySerialNumber(serialNumber, motherboardSet);
+					methodsUsed += "serialNumber,";
+				}
 				if (professor != null)
 				{
 					List<Motherboard> motherboardList = this.iMotherboardRepository.findByTeacher(professor);
@@ -632,6 +674,16 @@ public class ReaktorAdministrationRest
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
+				
+				// --- CONTROL NO MATCHES FOUND ----
+				if(motherboardSet.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
 			}
@@ -673,6 +725,7 @@ public class ReaktorAdministrationRest
 	@Operation
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
 	public ResponseEntity<?> unistallSoftware(
+			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
 			@RequestHeader(required = false) String professor,
@@ -682,10 +735,16 @@ public class ReaktorAdministrationRest
 		{
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
 			// --- IF ANY OF THE PARAMETERS IS NOT NULL ---
-			if ((classroom != null) || (trolley != null))
+			if ((professor != null) || (serialNumber != null) || (classroom != null) || (trolley != null))
 			{
 				String methodsUsed = "";
-
+				
+				if (serialNumber != null)
+				{
+					// BY serialNumber
+					this.addBySerialNumber(serialNumber, motherboardSet);
+					methodsUsed += "serialNumber,";
+				}
 				if (professor != null)
 				{
 					// ON SPECIFIC COMPUTER BY professor
@@ -718,6 +777,16 @@ public class ReaktorAdministrationRest
 				}
 
 				log.info("Parameters Used: " + methodsUsed);
+				
+				// --- CONTROL NO MATCHES FOUND ----
+				if(motherboardSet.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
 				// --- RETURN OK RESPONSE ---
 				return ResponseEntity.ok().build();
 			}
