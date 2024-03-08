@@ -199,66 +199,6 @@ public class ReaktorMonitoringRest
 	}
 
 	/**
-	 * Metodo que se le pasa el nombre del fichero y devuelve un array de bytes 
-	 * representando el contenido del fichero enviado
-	 * 
-	 * @param name nombre del fichero
-	 * @return byte[] contenido del fichero EN BYTES
-	 * @throws ComputerError 
-	 */
-	public byte[] readText(String name) throws ComputerError
-	{
-
-		//Creamos los flujos de entrada
-		FileInputStream fileInputStream = null;
-		DataInputStream dataInputStream = null;
-
-		try
-		{
-			//Se inicializan los flujos de entrada
-			fileInputStream = new FileInputStream(name);
-			dataInputStream = new DataInputStream(fileInputStream);
-
-			//Devolvemos el contenido de bytes
-			return dataInputStream.readAllBytes();
-		}
-		catch (IOException exception)
-		{
-			String message = "Error al leer el contenido del fichero pasado";
-			log.error(message, exception);
-			throw new ComputerError(500, message, exception);
-		}
-		finally
-		{
-			if (dataInputStream != null)
-			{
-				try
-				{
-					dataInputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error al cerrar el flujo de entrada de datos";
-					log.error(message, exception);
-				}
-			}
-
-			if (fileInputStream != null)
-			{
-				try
-				{
-					fileInputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error al cerrar el flujo de entrada general";
-					log.error(message, exception);
-				}
-			}
-		}
-	}
-
-	/**
 	 * Endpoint que recibe una captura de pantalla de un ordenador y la guarda en el servidor en la carpeta
 	 * src\main\resources\reaktor_config\screenshots, el fichero se identifica con el numero de serie del
 	 * ordenador mas la fecha actual
@@ -420,3 +360,64 @@ public class ReaktorMonitoringRest
 		}
 	}
 }
+
+	/**
+	 * Metodo que se le pasa el nombre del fichero y devuelve un array de bytes 
+	 * representando el contenido del fichero enviado
+	 * 
+	 * @param name nombre del fichero
+	 * @return byte[] contenido del fichero EN BYTES
+	 * @throws ComputerError 
+	 */
+	public byte[] readText(String name) throws ComputerError
+	{
+	
+		//Creamos los flujos de entrada
+		FileInputStream fileInputStream = null;
+		DataInputStream dataInputStream = null;
+	
+		try
+		{
+			//Se inicializan los flujos de entrada
+			fileInputStream = new FileInputStream(name);
+			dataInputStream = new DataInputStream(fileInputStream);
+	
+			//Devolvemos el contenido de bytes
+			return dataInputStream.readAllBytes();
+		}
+		catch (IOException exception)
+		{
+			String message = "Error al leer el contenido del fichero pasado";
+			log.error(message, exception);
+			throw new ComputerError(500, message, exception);
+		}
+		finally
+		{
+			if (dataInputStream != null)
+			{
+				try
+				{
+					dataInputStream.close();
+				}
+				catch (IOException exception)
+				{
+					String message = "Error al cerrar el flujo de entrada de datos";
+					log.error(message, exception);
+				}
+			}
+	
+			if (fileInputStream != null)
+			{
+				try
+				{
+					fileInputStream.close();
+				}
+				catch (IOException exception)
+				{
+					String message = "Error al cerrar el flujo de entrada general";
+					log.error(message, exception);
+				}
+			}
+		}
+	}
+}	
