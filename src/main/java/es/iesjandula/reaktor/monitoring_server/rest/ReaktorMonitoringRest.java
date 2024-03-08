@@ -341,91 +341,31 @@ public class ReaktorMonitoringRest
 	}
 
 	/**
-	 * Method writeText
+	 * Endpoint que guarda toda la informacion de un ordenador en base de datos y lo escanea 
+	 * para comprobar que existen tareas pendientes de realizar
 	 * 
-	 * @param name
-	 * @param content
-	 */
-	public void writeText(String name, byte[] content)
-	{
-		// --- CREAMOS FLUJOS ---
-		FileOutputStream fileOutputStream = null;
-		DataOutputStream dataOutputStream = null;
-
-		try
-		{
-			// --- INICIALIZAMOS LOS FLUJOS ---
-			fileOutputStream = new FileOutputStream(name);
-			dataOutputStream = new DataOutputStream(fileOutputStream);
-
-			// --- ESCRIBIMOS Y HACEMOS FLUSH ---
-			dataOutputStream.write(content);
-			dataOutputStream.flush();
-
-		}
-		// --- CAPTURAMOS Y ARROJAMOS ---
-		catch (IOException exception)
-		{
-			String message = "Error";
-			log.error(message, exception);
-		}
-		finally
-		{
-			// --- CERRAMOS TODOS LOS FLUJOS EN EL FINALLY ---
-			if (dataOutputStream != null)
-			{
-				try
-				{
-					dataOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-
-			if (fileOutputStream != null)
-			{
-				try
-				{
-					fileOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Method sendFullComputer that method is used for send periodically computer
-	 * Instance
-	 *
-	 * @param serialNumber    the serial number
-	 * @param andaluciaId     the andalucia id
-	 * @param computerNumber  the computer number
-	 * @param reaktorInstance the reaktor object instance
-	 * @return ResponseEntity response
+	 * @param serialNumber numero de serie del ordenador
+	 * @param reaktorInstance instancia completa del ordenador con hardware y tareas
+	 * @return informacion sobre el servidor
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/fullInfo", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<?> sendFullComputer(@RequestHeader(required = false) String serialNumber,
 			@RequestBody(required = true) Reaktor reaktorInstance)
 	{
-		// OBETENEMOS TODA LA INFO Y GUARDAMOS CON reaktorActions (ESTO ES DEL REAKTO ORIGINAL)
-		log.info("Receiving information from reaktor {}", reaktorInstance);
+		//Obtenemos toda la informacion y la guardamos con reaktor actions
+		log.info("Recibiendo toda la informacion de reaktor {}", reaktorInstance);
 		this.reaktorActions.saveReaktor(reaktorInstance);
-		return ResponseEntity.ok("Reaktor Server is running");
+		return ResponseEntity.ok("Iniciando servidor de reaktor");
 	}
 
 	/**
-	 * Method sendStatusComputer metod to check and send status
-	 *
-	 * @param serialNumber the serialNumber
-	 * @return ResponseEntity
+	 * Endpoint que obtiene las tareas en por hacer (TO DO) para ponerlas en progreso
+	 * (IN_PROGRESS) para que se lleve a cabo la tarea a realizar sobre ese ordenador
+	 * el ordenador se identifica por su numero de serie 
+	 * 
+	 * @param serialNumber Numero de serie del ordenador
+	 * @return Informacion de la tarea especifica por hacer o error si no encuentra el ordenador
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/get/pendingActions", produces = "application/json")
@@ -433,46 +373,48 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			// --- OBTENEMOS EL MOTHERBOARD CON EL SERIALNUMBER ---
+			//Se comprueba que el ordenador exista
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 
-			// --- SI EL MOTHERBOARD NO ES EMPTY ---
+			//Si no existe mandamos un error
 			if (motherboard.isEmpty())
 			{
-				String error = "Incorrect Serial Number /get/pendingActions";
+				String error = "El numero de serie "+serialNumber+" no pertenece a ningun ordenador";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
+			//Obtenemos la lista de tarea que esten por hacer
 			List<Task> tasks = this.iTaskRepository.findByTaskIdSerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
 			
-      if (!tasks.isEmpty())
+			//Se comprueba que haya tareas
+			if (!tasks.isEmpty())
 			{ 
-        // --- ORDENAMOS LAS FECHAS ---
-        tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+		        //Ordenamos las tareas por fechas
+		        tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+		
+		        //Cogemos la primera tarea
+		        Task task = tasks.get(0);		
 
-        // --- OBTENEMOS LA PRIMERA TASK ---
-        Task task = tasks.get(0);		
-
-        // --- CREAMOS TASK DTO---
-        TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
-			
-				// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
+		        //Transformamos la tarea a entidad
+		        TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
+					
+				//Cambiamos el estado de TO DO a IN_PROGRESS
 				task.setStatus(Action.STATUS_IN_PROGRESS);
+				
+				//Actualizamos la tarea
 				this.iTaskRepository.saveAndFlush(task);
 
-        // RETORNAMOS
-        return ResponseEntity.ok().body(taskDTO); 
-      }
-
-			log.error("No actions to do");
+		        //Devolvemos su informacion
+		        return ResponseEntity.ok().body(taskDTO); 
+			}
+			//Si no hay tareas devilvemos un ok sin mas
+			log.error("No hay tareas por hacer");
 			return ResponseEntity.ok().build();
 		}
-		// CAPTURAMOS Y ARROJAMOS
 		catch (Exception exception)
 		{
-			String error = "Server Error";
+			String error = "Error al actualizar el estado de la tarea";
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
