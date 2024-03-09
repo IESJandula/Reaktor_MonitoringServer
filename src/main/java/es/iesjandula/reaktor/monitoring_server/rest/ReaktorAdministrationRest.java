@@ -66,7 +66,7 @@ public class ReaktorAdministrationRest
 	 */
 	public ReaktorAdministrationRest() 
 	{
-		this.checker = new AdminChecker(iMotherboardRepository);
+		this.checker = new AdminChecker();
 		this.utils = new AdminUtils();
 	}
 
@@ -116,8 +116,8 @@ public class ReaktorAdministrationRest
 		{
 			String error = "Error de servidor, fallo al abrir la configuracion wifi del ordenador asignado";
 			log.error(error, exception);
-			ComputerError computerError = new ComputerError(500, error, exception);
-			return ResponseEntity.status(500).body(computerError.toMap());
+			ComputerError computerError = new ComputerError(409, error, exception);
+			return ResponseEntity.status(409).body(computerError.toMap());
 		}
 
 	}
@@ -156,8 +156,8 @@ public class ReaktorAdministrationRest
 			else
 			{
 				String error = Constants.ERROR_FILE_CFG;
-				ComputerError computerError = new ComputerError(500, error);
-				return ResponseEntity.status(500).body(computerError.toMap());
+				ComputerError computerError = new ComputerError(409, error);
+				return ResponseEntity.status(409).body(computerError.toMap());
 			}
 
 			//Devolvemos el estado satisfactorio de la operacion
@@ -209,7 +209,7 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				commands = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, commands);
+				commands = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, commands,this.iMotherboardRepository);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_COMMANDS);
 				
@@ -290,7 +290,7 @@ public class ReaktorAdministrationRest
 			//la peticion de apagado a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				shutdownList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList);
+				shutdownList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, shutdownList,this.iMotherboardRepository);
 
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
 
@@ -369,7 +369,7 @@ public class ReaktorAdministrationRest
 			//la peticion de reinicio a todos los ordenadores
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
-				restartList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, restartList);
+				restartList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, restartList,this.iMotherboardRepository);
 
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
 
@@ -446,7 +446,7 @@ public class ReaktorAdministrationRest
 			//la peticion de bloqueo o desbloqueo a todos los ordenadores
 			if ((classroom != null) || (trolley != null))
 			{
-				motherboardList = this.checker.checkAndSend(trolley, classroom, null, motherboardList);
+				motherboardList = this.checker.checkAndSend(trolley, classroom, null, motherboardList,this.iMotherboardRepository);
 
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_PERIPHERAL);
 
@@ -525,7 +525,7 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (serialNumber != null))
 			{
-				screenshotList = this.checker.checkAndSend(serialNumber, classroom, trolley, null, screenshotList);
+				screenshotList = this.checker.checkAndSend(serialNumber, classroom, trolley, null, screenshotList,this.iMotherboardRepository);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
@@ -605,7 +605,7 @@ public class ReaktorAdministrationRest
 			if ((classroom != null) || (trolley != null) || (professor != null))
 			{
 				
-				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet);
+				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
 				
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_INSTALL);
 				
@@ -686,7 +686,7 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (professor!=null))
 			{
-				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet);
+				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
 				
 				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
@@ -759,7 +759,7 @@ public class ReaktorAdministrationRest
 			@RequestHeader(required = false) String computerNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
-			@RequestHeader(required = false) String teacher, 
+			@RequestHeader(required = false) String teacher,           
 			@RequestHeader(required = false) Integer floor, 
 			@RequestHeader(required = false) Boolean admin)
 	{
@@ -959,7 +959,7 @@ public class ReaktorAdministrationRest
 			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (floor != null))
 			{
 
-				fileList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, fileList);
+				fileList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, fileList,this.iMotherboardRepository);
 
 				//Guardamos el fichero en src/main/resources/reaktor_config/files
 				this.utils.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
