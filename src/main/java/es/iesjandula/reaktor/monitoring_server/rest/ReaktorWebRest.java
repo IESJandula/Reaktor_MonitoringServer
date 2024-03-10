@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RestController;
 import es.iesjandula.reaktor.exceptions.ComputerError;
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
-import es.iesjandula.reaktor.monitoring_server.utils.Constants;
 import es.iesjandula.reaktor.monitoring_server.utils.WebUtils;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +45,7 @@ public class ReaktorWebRest
 	 */
 	public ReaktorWebRest()
 	{
-		this.webUtils = new WebUtils(this.iMotherboardRepository);
+		this.webUtils = new WebUtils();
 	}
 	
 	/**
@@ -83,25 +82,25 @@ public class ReaktorWebRest
 			if(serialNumber != null || andaluciaId!=null || computerNumber!=null || classroom!=null || trolley!=null || floor!=null || professor!=null)
 			{
 				//Buscamos por numero de serie
-				this.webUtils.getBySerialNumber(serialNumber, list);
+				this.webUtils.getBySerialNumber(serialNumber, list,this.iMotherboardRepository);
 	
 				//Buscamos por andalucia id
-				this.webUtils.getByAndaluciaId(andaluciaId, list);
+				this.webUtils.getByAndaluciaId(andaluciaId, list,this.iMotherboardRepository);
 	
 				//Buscamos por numero de ordenador
-				this.webUtils.getByComputerNumber(computerNumber, list);
+				this.webUtils.getByComputerNumber(computerNumber, list,this.iMotherboardRepository);
 	
 				//Buscamos por clase
-				this.webUtils.getByClassroom(classroom, list);
+				this.webUtils.getByClassroom(classroom, list,this.iMotherboardRepository);
 	
 				//Buscamos por carrito
-				this.webUtils.getByTrolley(trolley, list);
+				this.webUtils.getByTrolley(trolley, list,this.iMotherboardRepository);
 	
 				//Buscamos por planta
-				this.webUtils.getByFloor(floor, list);
+				this.webUtils.getByFloor(floor, list,this.iMotherboardRepository);
 	
 				//Buscamos por profesor
-				this.webUtils.getByProfessor(professor, list);
+				this.webUtils.getByProfessor(professor, list,this.iMotherboardRepository);
 				
 				log.info(list.toString());
 				
@@ -135,11 +134,13 @@ public class ReaktorWebRest
 	/**
 	 * Endpoint que busca un ordenador y devuelve un zip con sus capturas de pantalla
 	 * el ordenador se identifica con varios parametros
-	 * @param classroom
-	 * @param trolley
-	 * @param floor
-	 * @param professor
+	 * 
+	 * @param classroom clase en la que se encuentra 
+	 * @param trolley carrito al que pertenece
+	 * @param floor planta en la que se encuentra
+	 * @param professor profesor que gestiona el ordenador
 	 * @return Carpeta .zip de capturas de pantalla
+	 * @see {@link #executeFinalZipCommand(String)} metodo que ejecuta el comando
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/web/screenshot", produces = "application/zip")
@@ -156,19 +157,19 @@ public class ReaktorWebRest
 			String finalZipCommand = "tar -a -c -f Compressed.zip";
 			
 			//Se añade la clase al comando
-			finalZipCommand = this.getToZipCommandByClassroom(classroom, finalZipCommand);
+			finalZipCommand = this.webUtils.getToZipCommandByClassroom(classroom, finalZipCommand,this.iMotherboardRepository);
 
 			//Se añade el carrito al comando
-			finalZipCommand = this.getToZipCommandByTrolley(trolley, finalZipCommand);
+			finalZipCommand = this.webUtils.getToZipCommandByTrolley(trolley, finalZipCommand,this.iMotherboardRepository);
 
 			//Se añade la planta al comando
-			finalZipCommand = this.getToZipCommandByfloor(floor, finalZipCommand);
+			finalZipCommand = this.webUtils.getToZipCommandByfloor(floor, finalZipCommand,this.iMotherboardRepository);
 
 			//Se añade el profesor al comando
-			finalZipCommand = this.getToZipCommandByProfessor(professor, finalZipCommand);
+			finalZipCommand = this.webUtils.getToZipCommandByProfessor(professor, finalZipCommand,this.iMotherboardRepository);
 
 			//Se añaden todos los ordenadores
-			finalZipCommand = this.getToZipCommandByNullAll(classroom, trolley, floor, professor, finalZipCommand);
+			finalZipCommand = this.webUtils.getToZipCommandByNullAll(classroom, trolley, floor, professor, finalZipCommand,this.iMotherboardRepository);
 
 			log.info(finalZipCommand);
 			
@@ -206,126 +207,32 @@ public class ReaktorWebRest
 
 
 	/**
-	 * Method executeFinalZipCommand
-	 * @param finalZipCommand
-	 * @return
-	 * @throws IOException
+	 * Metodo que ejecuta el comando que comprime la carpeta .zip con las capturas de pantalla
+	 * usando los parametros introducidos del endpoint al que pertenece
+	 * 
+	 * @param finalZipCommand comando para comprimir un archivo
+	 * @return la carpeta .zip con el contenido
+ 	 * @throws IOException
 	 */
 	private ResponseEntity<?> executeFinalZipCommand(String finalZipCommand) throws IOException
 	{
+		//Se crea el entorno de ejecucion
 		Runtime rt = Runtime.getRuntime();
+		//Se llama a la cmd y se pone como argumento el comando para zipear una carpeta
 		Process pr = rt.exec("cmd.exe /c " + finalZipCommand);
 
 		File file = new File("Compressed.zip");
 		byte[] bytesArray = Files.readAllBytes(file.toPath());
 
-		// --- SETTING THE HEADERS WITH THE NAME OF THE FILE TO DOWLOAD PDF ---
+		/*
+		 * Colocamos cabeceras para que a la hora de descargar el fichero se identifique
+		 * con una extension en este caso .zip
+		 */
 		HttpHeaders responseHeaders = new HttpHeaders();
-		//--- SET THE HEADERS ---
+		//Le damos valor a las cabeceras
 		responseHeaders.set("Content-Disposition", "attachment; filename="+file.getName());
-
+		//Retornamos el valor de las cabeceras junto con la carpeta comprimida
 		return ResponseEntity.ok().headers(responseHeaders).body(bytesArray);
 	}
-
-
-	/**
-	 * Method getToZipCommandByNullAll
-	 * @param classroom
-	 * @param trolley
-	 * @param floor
-	 * @param professor
-	 * @param finalZipCommand
-	 * @return
-	 */
-	private String getToZipCommandByNullAll(String classroom, String trolley, Integer floor, String professor,
-			String finalZipCommand)
-	{
-		if((classroom==null) && (trolley == null) && (floor == null) && (professor == null) )
-		{
-			for(Motherboard motherboard : this.iMotherboardRepository.findAll())
-			{
-				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
-			}
-		}
-		return finalZipCommand;
-	}
-
-
-	/**
-	 * Method getToZipCommandByProfessor
-	 * @param professor
-	 * @param finalZipCommand
-	 * @return
-	 */
-	private String getToZipCommandByProfessor(String professor, String finalZipCommand)
-	{
-		if((professor!=null) && !professor.isBlank() && !professor.isEmpty())
-		{
-			for(Motherboard motherboard : this.iMotherboardRepository.findByTeacher(professor))
-			{
-				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
-			}
-		}
-		return finalZipCommand;
-	}
-
-
-	/**
-	 * Method getToZipCommandByfloor
-	 * @param floor
-	 * @param finalZipCommand
-	 * @return
-	 */
-	private String getToZipCommandByfloor(Integer floor, String finalZipCommand)
-	{
-		if(floor!=null)
-		{
-			for(Motherboard motherboard : this.iMotherboardRepository.findByFloor(floor))
-			{
-				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
-			}
-		}
-		return finalZipCommand;
-	}
-
-
-	/**
-	 * Method getToZipCommandByTrolley
-	 * @param trolley
-	 * @param finalZipCommand
-	 * @return
-	 */
-	private String getToZipCommandByTrolley(String trolley, String finalZipCommand)
-	{
-		if((trolley!=null) && !trolley.isBlank() && !trolley.isEmpty())
-		{
-			for(Motherboard motherboard : this.iMotherboardRepository.findByTrolley(trolley))
-			{
-				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
-			}
-		}
-		return finalZipCommand;
-	}
-
-
-	/**
-	 * Method getToZipCommandByClassroom
-	 * @param classroom
-	 * @param finalZipCommand
-	 * @return
-	 */
-	private String getToZipCommandByClassroom(String classroom, String finalZipCommand)
-	{
-		if((classroom!=null) && !classroom.isBlank() && !classroom.isEmpty())
-		{
-			for(Motherboard motherboard : this.iMotherboardRepository.findByClassroom(classroom))
-			{
-				finalZipCommand+= " " + Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + motherboard.getMotherBoardSerialNumber()+".png";
-			}
-		}
-		return finalZipCommand;
-	}
-
-
 
 }
