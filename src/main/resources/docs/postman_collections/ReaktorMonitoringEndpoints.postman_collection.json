@@ -13,13 +13,13 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn123",
+						"value": "123456DFG",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": " {\r\n    \"statusInfo\":\"install\",\r\n    \"status\":false,\r\n    \"error\":null,\r\n    \"taskDTO\":{\r\n        \"name\":\"restart\",\r\n        \"commandWindows\":\"shutdown -r\",\r\n        \"commandLinux\":\"reboot\",\r\n        \"info\":null,\r\n        \"date\":\"2024-02-20\"\r\n    }\r\n}\r\n",
+					"raw": " {\r\n    \"statusInfo\":null,\r\n    \"status\":false,\r\n    \"error\":null,\r\n    \"taskDTO\":{\r\n        \"name\":\"shutdown\",\r\n        \"commandWindows\":\"shutdown\",\r\n        \"commandLinux\":\"shutdown\",\r\n        \"info\":null,\r\n        \"date\":\"2024-03-11\"\r\n    }\r\n}\r\n",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -44,11 +44,8 @@
 		},
 		{
 			"name": "getAnyFile",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
 			"request": {
-				"method": "GET",
+				"method": "POST",
 				"header": [
 					{
 						"key": "serialNumber",

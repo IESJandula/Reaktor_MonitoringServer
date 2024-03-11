@@ -2,12 +2,10 @@ package es.iesjandula.reaktor.monitoring_server.rest;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -49,23 +47,26 @@ import lombok.extern.slf4j.Slf4j;
 public class ReaktorMonitoringRest
 {
 
-	/** Attribute iMotherboardRepository */
+	/**	Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Motherboard */
 	@Autowired
 	private IMotherboardRepository iMotherboardRepository;
 
-	/** Attribute iTaskRepository */
+	/**	Repositorio que se encarga de realizar las operaciones CRUD sobre la entidad Task */
 	@Autowired
 	private ITaskRepository iTaskRepository;
 
+	/**	Repositorio que se encarga de realizar las operaciones CRUD sobre varios repositorios dentro de la clase ReaktorActions */
 	@Autowired
 	private ReaktorActions reaktorActions;
 
 	/**
-	 * Method sendStatusComputer
-	 *
-	 * @param serialNumber
-	 * @param statusList
-	 * @return
+	 * Enpoint que comprueba que la tarea asignada a un ordenador este en progreso (IN_PROGRESS) para cambiar
+	 * su estado a realizada (DONE) o fallida (FAILURE), los ordenadores se identifican por su numero de serie
+	 * y la tarea se identifica dentro del objeto status que ademas se comprueba que exista en el ordenador encontrado
+	 * 
+	 * @param serialNumber numero de serie del ordenador
+	 * @param status estado de la tarea
+	 * @return ok si la tarea ha cambiado de estado, error si no existe la tarea o el ordenador
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/status", consumes = "application/json")
@@ -76,37 +77,36 @@ public class ReaktorMonitoringRest
 		{
 			log.info(serialNumber);
 			log.info(status.toString());
-			// Comprobar motherboard si existe
-
+			//Se comprueba qie el ordenador exista 
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 			if (motherboard.isEmpty())
 			{
-				String error = "Incorrect Serial Number /send/status";
-				ComputerError computerError = new ComputerError(401, error, null);
+				String error = "El numero de serie "+serialNumber+" no pertenece a ningun ordenador";
+				ComputerError computerError = new ComputerError(401, error);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// Comprobar si existe la Task por id
+			//Se obtiene un objeto TaskId para identificar a la entidad Task
 			TaskId taskId = new TaskId(serialNumber, status.getTaskDTO().getName(), status.getTaskDTO().getDate());
 			Optional<Task> task = this.iTaskRepository.findById(taskId);
-
+			//Se comprueba que la tarea exista
 			if (task.isEmpty())
 			{
-				String error = "Incorrect Task ID";
-				ComputerError computerError = new ComputerError(401, error, null);
+				String error = "La tarea en el ordenador con numero de serie "+serialNumber+" \ny con la tarea "+status.getTaskDTO().getName()+" no existe";
+				ComputerError computerError = new ComputerError(401, error);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// Comprobar el estado de la tarea, si es in progress
+			//Se comprueba que la tarea este en progreso en caso de que no lo este se envia un error
 			if (!task.get().getStatus().equals(Action.STATUS_IN_PROGRESS))
 			{
-				String error = "Task not in progress";
-				ComputerError computerError = new ComputerError(401, error, null);
+				String error = "La tarea no se encuentra en progreso, compruebe su estado antes de volver a enviarla";
+				ComputerError computerError = new ComputerError(401, error);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// Comprobar el estado, si esta correcto o a fallado, asigna el estado a la
-			// tarea
+			//Se comprueba si la tarea ha finalizado o no si su valor es true su estado cambia a DONE
+			//Si no su estado cambia a FAILURE
 			if (status.getStatus())
 			{
 				task.get().setStatus(Action.STATUS_DONE);
@@ -117,23 +117,29 @@ public class ReaktorMonitoringRest
 
 				log.error(status.getStatusInfo(), status.getError());
 			}
+			
+			//Si todo ha ido bien se salva la tarea en la base de datos
 			this.iTaskRepository.saveAndFlush(task.get());
-
+			
+			//Se devuelve el estado satisfactorio de la operacion
 			return ResponseEntity.ok().build();
 		}
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error a la hora de evaluar el estado de la tarea";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Getting the files , the computer send the serialNumber to identify
-	 *
-	 * @param serialNumber, the serial number of the computer
-	 * @return ResponseEntity
+	 * Endpoint que lee y devuelve el contenido de una tarea que contenga un fichero, el ordenador
+	 * se identifica por su numero de serie y se comprueba que la tarea tenga una ruta hacia algún fichero
+	 * 
+	 * @param serialNumber numero de serie del ordenador
+	 * @param taskDTO tarea con la ruta del fichero a leer
+	 * @return contenido del fichero de la tarea o error si el ordenador no existe o la tarea no posee ningún fichero o si el fichero no se puede leer
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/get/file", produces = "multipart/form-data")
@@ -142,114 +148,63 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			// --- SACAMOS EL MOTHERBOARD POR EL SERIAL NUMBER ---
+			//Se comprueba que el ordenador exista
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 
-			// --- SI NO ES EMPTY ---
+			//Si no existe mandamos un error
 			if (motherboard.isEmpty())
 			{
-				String error = "Incorrect Serial Number /get/file";
+				String error = "El numero de serie "+serialNumber+" no pertenece a ningun ordenador";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// --- CREAMOS EL TASK ID ---
+			//Creamos la id de la tarea para buscar la tarea en especifico
 			TaskId taskId = new TaskId(serialNumber, taskDTO.getName(), taskDTO.getDate());
 
-			// --- BUSCAMOS POR EL TASK ID ---
+			//Buscamos la tarea por su id
 			Optional<Task> task = this.iTaskRepository.findById(taskId);
 
-			// --- SI EL TASKID NO ESTA VACIO ---
+			//Se comprueba que la tarea exista
 			if (task.isEmpty())
 			{
-				String error = "Incorrect Task ID";
+				String error = "La tarea en el ordenador con numero de serie "+serialNumber+" \ny con la tarea "+taskDTO.getName()+" no existe";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
-
-			// --- CREAMOS EL IMPUT STREAM ---
+			
+			if(task.get().getInfo()==null || task.get().getInfo().isEmpty())
+			{
+				String error = "La tarea del ordenador encontrado no contiene ninguna ruta a ningún fichero del servidor";
+				ComputerError computerError = new ComputerError(401,error);
+				return ResponseEntity.status(401).body(computerError.toMap());
+			}
+			//Creamos el flujo de entrada para obtener el contenido del fichero
 			InputStreamResource outcomeInputStreamResource = new InputStreamResource(
 					new ByteArrayInputStream(this.readText(taskDTO.getInfo())));
 
-			// --- RESPONDEMOS CON EL INPUT STREAM ---
+			//Devolvemos el contenido del fichero
 			return ResponseEntity.ok().body(outcomeInputStreamResource);
 
 		}
-		// --- CAPTURAMOS Y ARROJAMOS ---
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error a la hora de leer el fichero de la tarea especificada";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Method readText to read
+	 * Endpoint que recibe una captura de pantalla de un ordenador y la guarda en el servidor en la carpeta
+	 * src\main\resources\reaktor_config\screenshots, el fichero se identifica con el numero de serie del
+	 * ordenador mas la fecha actual
 	 * 
-	 * @param name
-	 * @return byte[]
-	 * @throws ComputerError
-	 */
-	public byte[] readText(String name) throws ComputerError
-	{
-
-		// --- CREAMOS FLUJOS ---
-		FileInputStream fileInputStream = null;
-		DataInputStream dataInputStream = null;
-
-		try
-		{
-			// --- INICIALIZAMOS FLUJOS ---
-			fileInputStream = new FileInputStream(name);
-			dataInputStream = new DataInputStream(fileInputStream);
-
-			// --- RETORNAMOS CON LA LECTURA DE TODOS LOS BYTES ---
-			return dataInputStream.readAllBytes();
-		}
-		// --- CAPTURAMOS Y ARROJAMOS EXCEPCION ---
-		catch (IOException exception)
-		{
-			String message = "Error";
-			log.error(message, exception);
-			throw new ComputerError(1, message, exception);
-		}
-		finally
-		{
-			// --- CERRRAMOS TODOS LOS FLUJOS EN EL FINALLY ---
-			if (dataInputStream != null)
-			{
-				try
-				{
-					dataInputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-
-			if (fileInputStream != null)
-			{
-				try
-				{
-					fileInputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Getting the files , the computer send the serialNumber to identify
-	 *
-	 * @param serialNumber, the serial number of the computer
-	 * @return ResponseEntity
+	 * @param screenshot fichero de la captura de pantalla
+	 * @param serialNumber numero de serie del ordenador
+	 * @param dateLong fecha en formato long
+	 * @return ok si escribio bien el fichero, error si no encuentra el ordenador o si escribio mal el fichero
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/screenshot", consumes = "multipart/form-data")
@@ -258,160 +213,97 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			// --- OBTENEMOS EL MOTHERBOARD CON UN SERIALNUMBER ---
+			//Se comprueba que el ordenador exista
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 
-			// --- SI EL MOTHERBOARD NO ESTA VACIO ---
+			//Si no existe mandamos un error
 			if (motherboard.isEmpty())
 			{
-				String error = "Incorrect Serial Number /send/screenshot";
+				String error = "El numero de serie "+serialNumber+" no pertenece a ningun ordenador";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// --- CREAMOS EL DATE ---
+			//Instanciamos la fecha usando el long
 			Date date = new Date(dateLong);
 
-			// --- CREAMOS EL TASK ID ---
+			//Creamos la id de la tarea para buscar la tarea en especifico
 			TaskId taskId = new TaskId(serialNumber, "screenshot", date);
 
-			// --- BUSCAMOS LA TASK CON EL TASKID ---
+			//Buscamos la tarea por su id especifico
 			Optional<Task> task = this.iTaskRepository.findById(taskId);
 
-			// --- SI EL TASK NO ESTA VACIO ---
+			//Si la tarea no existe mandamos un error
 			if (task.isEmpty())
 			{
-				String error = "Incorrect Task ID";
+				String error = "La tarea en el ordenador con numero de serie "+serialNumber+" \ny con la tarea "+task.get().getAction().getName()+" no existe";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// --- SACAMOS LA DATE A UN STRING ---
-			//String finalDate = date.getYear() + "-" + date.getMonth() + "-" + date.getDay();
-
-			// --- MONTAMOS EL NOMBRE / RUTA QUE TENDRA EL EL SCREENSHOT ---
+			//Se monta la ruta del fichero usando el nombre del fichero pasado mas la fecha parseada
 			String fileName = Constants.REAKTOR_CONFIG_EXEC_WEB_SCREENSHOTS + File.separator + "screen_" + serialNumber + "_" + date.toString() + ".png";
 			File file = new File(fileName);
 			String absolutePath = file.getAbsolutePath();
 
 			log.info("ROUTE: " + absolutePath);
 
-			// HACEMOS UN TRY CATHC CON RECURSOS , ESTE SIRVE PARA AUTOMATICAMENTE CERRAR EL
-			// FLUJO , PERO TAMBIEN AÑADIMOS UN CLOSE
+			//Se crea un try-catch con recursos para instanciar y cerrar el flujod e salida
 			try (FileOutputStream outputStream = new FileOutputStream(file))
 			{
-				// GUARDAMOS Y CERRAMOS
+				//Escribimos el contenido del fichero en el fichero destino
 				outputStream.write(screenshot.getBytes());
 				outputStream.close();
 			}
 			catch (IOException exception)
 			{
-				log.error("ERROR ON SAVE THE SCREENSHOT");
-				ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+				String error = "Error escribiendo el contenido del fichero en el fichero destino";
+				log.error(error,exception);
+				ComputerError computerError = new ComputerError(500,error, exception);
 				return ResponseEntity.status(500).body(computerError.toMap());
 			}
 
 			log.info("Saving " + fileName + " -> " + file.exists());
 
-			// --- RETORNAMOS OK ---
+			//Devolvemos el estado satisfactorio de la operacion
 			return ResponseEntity.ok().build();
 
 		}
-		// --- CAPTURAMOS Y ARROJAMOS ---
 		catch (Exception exception)
 		{
-			log.error(exception.getMessage());
-			ComputerError computerError = new ComputerError(500, exception.getMessage(), exception);
+			String error = "Error al guardar la captura de pantalla en el servidor";
+			log.error(error,exception);
+			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
 
 	/**
-	 * Method writeText
+	 * Endpoint que guarda toda la informacion de un ordenador en base de datos y lo escanea 
+	 * para comprobar que existen tareas pendientes de realizar
 	 * 
-	 * @param name
-	 * @param content
-	 */
-	public void writeText(String name, byte[] content)
-	{
-		// --- CREAMOS FLUJOS ---
-		FileOutputStream fileOutputStream = null;
-		DataOutputStream dataOutputStream = null;
-
-		try
-		{
-			// --- INICIALIZAMOS LOS FLUJOS ---
-			fileOutputStream = new FileOutputStream(name);
-			dataOutputStream = new DataOutputStream(fileOutputStream);
-
-			// --- ESCRIBIMOS Y HACEMOS FLUSH ---
-			dataOutputStream.write(content);
-			dataOutputStream.flush();
-
-		}
-		// --- CAPTURAMOS Y ARROJAMOS ---
-		catch (IOException exception)
-		{
-			String message = "Error";
-			log.error(message, exception);
-		}
-		finally
-		{
-			// --- CERRAMOS TODOS LOS FLUJOS EN EL FINALLY ---
-			if (dataOutputStream != null)
-			{
-				try
-				{
-					dataOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-
-			if (fileOutputStream != null)
-			{
-				try
-				{
-					fileOutputStream.close();
-				}
-				catch (IOException exception)
-				{
-					String message = "Error";
-					log.error(message, exception);
-				}
-			}
-		}
-	}
-
-	/**
-	 * Method sendFullComputer that method is used for send periodically computer
-	 * Instance
-	 *
-	 * @param serialNumber    the serial number
-	 * @param andaluciaId     the andalucia id
-	 * @param computerNumber  the computer number
-	 * @param reaktorInstance the reaktor object instance
-	 * @return ResponseEntity response
+	 * @param serialNumber numero de serie del ordenador
+	 * @param reaktorInstance instancia completa del ordenador con hardware y tareas
+	 * @return informacion sobre el servidor
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/send/fullInfo", consumes = "application/json", produces = "application/json")
 	public ResponseEntity<?> sendFullComputer(@RequestHeader(required = false) String serialNumber,
 			@RequestBody(required = true) Reaktor reaktorInstance)
 	{
-		// OBETENEMOS TODA LA INFO Y GUARDAMOS CON reaktorActions (ESTO ES DEL REAKTO ORIGINAL)
-		log.info("Receiving information from reaktor {}", reaktorInstance);
+		//Obtenemos toda la informacion y la guardamos con reaktor actions
+		log.info("Recibiendo toda la informacion de reaktor {}", reaktorInstance);
 		this.reaktorActions.saveReaktor(reaktorInstance);
-		return ResponseEntity.ok("Reaktor Server is running");
+		return ResponseEntity.ok("Iniciando servidor de reaktor");
 	}
 
 	/**
-	 * Method sendStatusComputer metod to check and send status
-	 *
-	 * @param serialNumber the serialNumber
-	 * @return ResponseEntity
+	 * Endpoint que obtiene las tareas en por hacer (TO DO) para ponerlas en progreso
+	 * (IN_PROGRESS) para que se lleve a cabo la tarea a realizar sobre ese ordenador
+	 * el ordenador se identifica por su numero de serie 
+	 * 
+	 * @param serialNumber Numero de serie del ordenador
+	 * @return Informacion de la tarea especifica por hacer o error si no encuentra el ordenador
 	 */
 	@Operation
 	@RequestMapping(method = RequestMethod.GET, value = "/get/pendingActions", produces = "application/json")
@@ -419,48 +311,111 @@ public class ReaktorMonitoringRest
 	{
 		try
 		{
-			// --- OBTENEMOS EL MOTHERBOARD CON EL SERIALNUMBER ---
+			//Se comprueba que el ordenador exista
 			Optional<Motherboard> motherboard = this.iMotherboardRepository.findById(serialNumber);
 
-			// --- SI EL MOTHERBOARD NO ES EMPTY ---
+			//Si no existe mandamos un error
 			if (motherboard.isEmpty())
 			{
-				String error = "Incorrect Serial Number /get/pendingActions";
+				String error = "El numero de serie "+serialNumber+" no pertenece a ningun ordenador";
 				ComputerError computerError = new ComputerError(401, error, null);
 				return ResponseEntity.status(401).body(computerError.toMap());
 			}
 
-			// --- OBTENEMOS LAS TASKS CON EL SERIALNUMBER Y LAS ACCIONES POR HACER ---
+			//Obtenemos la lista de tarea que esten por hacer
 			List<Task> tasks = this.iTaskRepository.findByTaskIdSerialNumberAndStatus(serialNumber, Action.STATUS_TODO);
 			
-      if (!tasks.isEmpty())
+			//Se comprueba que haya tareas
+			if (!tasks.isEmpty())
 			{ 
-        // --- ORDENAMOS LAS FECHAS ---
-        tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+		        //Ordenamos las tareas por fechas
+		        tasks.sort((o1, o2) -> o1.getTaskId().getDate().compareTo(o2.getTaskId().getDate()));
+		
+		        //Cogemos la primera tarea
+		        Task task = tasks.get(0);		
 
-        // --- OBTENEMOS LA PRIMERA TASK ---
-        Task task = tasks.get(0);		
-
-        // --- CREAMOS TASK DTO---
-        TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
-			
-				// --- CAMBIAMOS EL STATUS DE "TO DO" A "IN PROGRESS"---
+		        //Transformamos la tarea a entidad
+		        TaskDTO taskDTO = new TaskDTO(task.getTaskId().getActionName(),task.getAction().getCommandWindows(),task.getAction().getCommandLinux(), task.getInfo(),task.getTaskId().getDate());
+					
+				//Cambiamos el estado de TO DO a IN_PROGRESS
 				task.setStatus(Action.STATUS_IN_PROGRESS);
+				
+				//Actualizamos la tarea
 				this.iTaskRepository.saveAndFlush(task);
 
-        // RETORNAMOS
-        return ResponseEntity.ok().body(taskDTO); 
-      }
-
-			log.error("No actions to do");
+		        //Devolvemos su informacion
+		        return ResponseEntity.ok().body(taskDTO); 
+			}
+			//Si no hay tareas devilvemos un ok sin mas
+			log.error("No hay tareas por hacer");
 			return ResponseEntity.ok().build();
 		}
-		// CAPTURAMOS Y ARROJAMOS
 		catch (Exception exception)
 		{
-			String error = "Server Error";
+			String error = "Error al actualizar el estado de la tarea";
 			ComputerError computerError = new ComputerError(500, error, exception);
 			return ResponseEntity.status(500).body(computerError.toMap());
 		}
 	}
-}
+
+
+	/**
+	 * Metodo que se le pasa el nombre del fichero y devuelve un array de bytes 
+	 * representando el contenido del fichero enviado
+	 * 
+	 * @param name nombre del fichero
+	 * @return byte[] contenido del fichero EN BYTES
+	 * @throws ComputerError 
+	 */
+	public byte[] readText(String name) throws ComputerError
+	{
+	
+		//Creamos los flujos de entrada
+		FileInputStream fileInputStream = null;
+		DataInputStream dataInputStream = null;
+	
+		try
+		{
+			//Se inicializan los flujos de entrada
+			fileInputStream = new FileInputStream(name);
+			dataInputStream = new DataInputStream(fileInputStream);
+	
+			//Devolvemos el contenido de bytes
+			return dataInputStream.readAllBytes();
+		}
+		catch (IOException exception)
+		{
+			String message = "Error al leer el contenido del fichero pasado";
+			log.error(message, exception);
+			throw new ComputerError(500, message, exception);
+		}
+		finally
+		{
+			if (dataInputStream != null)
+			{
+				try
+				{
+					dataInputStream.close();
+				}
+				catch (IOException exception)
+				{
+					String message = "Error al cerrar el flujo de entrada de datos";
+					log.error(message, exception);
+				}
+			}
+	
+			if (fileInputStream != null)
+			{
+				try
+				{
+					fileInputStream.close();
+				}
+				catch (IOException exception)
+				{
+					String message = "Error al cerrar el flujo de entrada general";
+					log.error(message, exception);
+				}
+			}
+		}
+	}
+}	

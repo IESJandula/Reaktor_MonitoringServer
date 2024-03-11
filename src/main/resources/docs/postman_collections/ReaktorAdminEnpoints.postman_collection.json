@@ -13,7 +13,7 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn123",
+						"value": "123456DFG",
 						"type": "text"
 					},
 					{
@@ -24,7 +24,7 @@
 					},
 					{
 						"key": "trolley",
-						"value": "trolley1",
+						"value": "Carrito 1",
 						"type": "text",
 						"disabled": true
 					},
@@ -63,7 +63,7 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn1235119",
+						"value": "123456DFG",
 						"type": "text"
 					},
 					{
@@ -108,7 +108,7 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn1235119",
+						"value": "123456DFG",
 						"type": "text"
 					},
 					{
@@ -153,7 +153,7 @@
 				"header": [
 					{
 						"key": "classroom",
-						"value": "0.5",
+						"value": "2 DAM",
 						"type": "text"
 					},
 					{
@@ -163,6 +163,15 @@
 						"disabled": true
 					}
 				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"id\" : 1,\r\n    \"active\" : false,\r\n    \"type\":\"USB1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
 					"raw": "http://localhost:8084/computers/admin/peripheral",
 					"protocol": "http",
@@ -198,7 +207,7 @@
 					},
 					{
 						"key": "serialNumber",
-						"value": "sn123",
+						"value": "123456DFG",
 						"type": "text"
 					}
 				],
@@ -225,13 +234,14 @@
 				"header": [
 					{
 						"key": "classroom",
-						"value": "0.5",
+						"value": "2 DAM",
 						"type": "text"
 					},
 					{
 						"key": "trolley",
 						"value": "trolley1",
-						"type": "text"
+						"type": "text",
+						"disabled": true
 					}
 				],
 				"url": {
@@ -258,7 +268,7 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn123",
+						"value": "123456DFG",
 						"type": "text"
 					},
 					{
@@ -285,16 +295,6 @@
 						"type": "text"
 					}
 				],
-				"body": {
-					"mode": "formdata",
-					"formdata": [
-						{
-							"key": "execFile",
-							"type": "file",
-							"src": "/C:/Users/casaj/Downloads/README.md"
-						}
-					]
-				},
 				"url": {
 					"raw": "http://localhost:8084/computers/admin/file",
 					"protocol": "http",
@@ -318,7 +318,7 @@
 				"header": [
 					{
 						"key": "classroom",
-						"value": "0.5",
+						"value": "2 DAM",
 						"type": "text"
 					},
 					{
@@ -362,7 +362,7 @@
 				"header": [
 					{
 						"key": "classroom",
-						"value": "0.5",
+						"value": "2 DAM",
 						"type": "text"
 					},
 					{
@@ -406,19 +406,18 @@
 				"header": [
 					{
 						"key": "serialNumber",
-						"value": "sn123",
+						"value": "123456DFG",
 						"type": "text"
 					},
 					{
 						"key": "computerSerialNumber",
-						"value": "sn123456",
+						"value": "123456BFG",
 						"type": "text"
 					},
 					{
 						"key": "andaluciaId",
 						"value": "AND-123",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "computerNumber",
@@ -468,6 +467,71 @@
 						"computers",
 						"computer",
 						"edit"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postWifiCFG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "123456DFG",
+						"type": "text"
+					},
+					{
+						"key": "wifiFileName",
+						"value": "Wi-Fi-Andared_Corporativo.xml",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/wifiCfg",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"wifiCfg"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "postOpenWeb",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "serialNumber",
+						"value": "123456DFG",
+						"type": "text"
+					},
+					{
+						"key": "webURL",
+						"value": "https://www.iesjandula.es/drupal/",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8084/computers/admin/chrome/openWeb",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8084",
+					"path": [
+						"computers",
+						"admin",
+						"chrome",
+						"openWeb"
 					]
 				}
 			},
