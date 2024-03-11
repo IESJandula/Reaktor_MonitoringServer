@@ -1,15 +1,15 @@
 package es.iesjandula.reaktor.monitoring_server.scheduled_task;
 
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+
 import es.iesjandula.reaktor.models.Motherboard;
 import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
 import es.iesjandula.reaktor.monitoring_server.utils.AppConfig;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.introspector.Property;
-
-import java.util.List;
 
 /**
  * - Class -

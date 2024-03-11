@@ -53,7 +53,7 @@ public class AdminChecker
 	 * @param set conjunto que guarda los ordenadores
 	 * @return El conunto de ordenadores actualizado
 	 */
-	public Set<Motherboard> checkAndSend(String serialNumber,String classroom,String trolley,Integer floor,Set<Motherboard> set,IMotherboardRepository motherboardRepository)
+	public Set<Motherboard> checkAndSend(String serialNumber, String classroom, String trolley, Integer floor, Set<Motherboard> set, IMotherboardRepository motherboardRepository)
 	{
 		String methodsUsed = "";
 
@@ -93,16 +93,24 @@ public class AdminChecker
 	 * <br>
 	 * {@link #sendSoftware(String, String, String, String)}<br>
 	 * <br>
+	 * @param serialNumber numero de serie del ordenador
 	 * @param trolley carrito al que pertenece el ordenador
 	 * @param classroom clase enla que se encuentra
 	 * @param professor profesor que dirije el ordenador
 	 * @param set conjunto que guarda los ordenadores
 	 * @see original {@link #checkAndSend(String, String, String, Integer, Set)}
 	 */
-	public Set<Motherboard> checkAndSend(String trolley,String classroom,String professor,Set<Motherboard> set,IMotherboardRepository motherboardRepository)
+	public Set<Motherboard> checkAndSend(String serialNumber, String trolley, String classroom, String professor, Set<Motherboard> set,IMotherboardRepository motherboardRepository)
 	{
 		String methodsUsed = "";
 
+		if (serialNumber != null)
+		{
+			//Se envia la peticion por el serialNumber
+			Motherboard motherboard = motherboardRepository.findByMotherBoardSerialNumber(serialNumber);
+			set.add(motherboard);
+			methodsUsed += "serialNumber,";
+		}
 		if (professor != null)
 		{
 			//Se envia la peticion por el profesor

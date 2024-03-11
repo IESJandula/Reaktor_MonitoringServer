@@ -4,14 +4,11 @@ import java.io.File;
 
 public class Constants
 {
-
-	/**Valor para encontrar la caroeta donde iran los ficheros de configuracion wifi/capturas/configuracion */
-	public static String FILE_FOLDER = "files" + File.separator;
-	
-	/**Nombre de la carpeta de configuracion*/
-	public static final String REAKTOR_CONFIG = "reaktor_config";
 	/**Nombre de la carpeta de configuracion con ejecutables */
 	public static final String REAKTOR_CONFIG_EXEC = "reaktor_config_exec";
+
+	/**Nombre de la carpeta de configuracion*/
+	public static final String REAKTOR_CONFIG = "reaktor_config";
 	/**Nombre de la carpeta de configuracion wifi*/
 	public static final String REAKTOR_CONFIG_EXEC_CONF_WIFI = REAKTOR_CONFIG_EXEC + File.separator + "confWIFI";
 	/**Nombre de la carpeta general*/

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -417,11 +418,14 @@ public class ReaktorAdministrationRest
 	 * por varios parametros en caso de que no se envie ninguno se enviara la peticion a todos
 	 * los ordenadores
 	 * 
+	 * IMPORTANTE: Actualmente no se utiliza ya que estamos pendientes de implementarlo de forma correcta
+	 * 
 	 * @param classroom clase en la que se encuentra el ordenador
 	 * @param trolley carrito al que pertenece el ordenador
 	 * @param usb usb que posee el ordenador o ordenadores afectados
 	 * @return ResponseEntity ok si encuentra los ordenadores, error si fallan
 	 */
+	@Deprecated
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/peripheral", consumes = "application/json")
 	public ResponseEntity<?> postPeripheral(
@@ -442,7 +446,7 @@ public class ReaktorAdministrationRest
 			//la peticion de bloqueo o desbloqueo a todos los ordenadores
 			if ((classroom != null) || (trolley != null))
 			{
-				motherboardList = this.checker.checkAndSend(trolley, classroom, null, motherboardList,this.iMotherboardRepository);
+				motherboardList = this.checker.checkAndSend(Strings.EMPTY, trolley, classroom, Strings.EMPTY, motherboardList,this.iMotherboardRepository);
 
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_PERIPHERAL);
 
@@ -523,7 +527,7 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((classroom != null) || (trolley != null) || (serialNumber != null))
 			{
-				screenshotList = this.checker.checkAndSend(serialNumber, classroom, trolley, null, screenshotList,this.iMotherboardRepository);
+				screenshotList = this.checker.checkAndSend(serialNumber, classroom, trolley, Strings.EMPTY, screenshotList,this.iMotherboardRepository);
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SCREENSHOT);
 
@@ -621,10 +625,8 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
-
-				log.info("Parameters Used: " + methodsUsed);
 				
-			  // Controlamos si se ha seleccionado alguna opción. En caso de que sea vacío, devolver un error
+				// Controlamos si se ha seleccionado alguna opción. En caso de que sea vacío, devolver un error
 				if(motherboardSet.isEmpty()) 
 				{
 					String error = "Error no matches found";
@@ -702,7 +704,7 @@ public class ReaktorAdministrationRest
 			//la linea de comandos a todos los ordenadores
 			if ((professor != null) || (serialNumber != null) || (classroom != null) || (trolley != null))
 			{
-				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
+				motherboardSet = this.checker.checkAndSend(serialNumber, trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
 
 				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
@@ -718,8 +720,6 @@ public class ReaktorAdministrationRest
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 
-				log.info("Parameters Used: " + methodsUsed);
-				
 				// --- CONTROL NO MATCHES FOUND ----
 				if(motherboardSet.isEmpty()) 
 				{
@@ -988,14 +988,14 @@ public class ReaktorAdministrationRest
 
 				fileList = this.checker.checkAndSend(serialNumber, classroom, trolley, floor, fileList,this.iMotherboardRepository);
 
-				//Guardamos el fichero en src/main/resources/reaktor_config/files
-				this.utils.writeText(Constants.FILE_FOLDER + fileName, execFile.getBytes());
+				//Guardamos el fichero en reaktor_config_exec/files
+				this.utils.writeText(Constants.REAKTOR_CONFIG_EXEC_FILES + File.separator + fileName, execFile.getBytes());
 				
 				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_FILE);
 
 				if (actionId.isPresent())
 				{
-					this.utils.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + fileName,this.iTaskRepository);
+					this.utils.addTasks(fileList, actionId.get(), Constants.REAKTOR_CONFIG_EXEC_FILES + File.separator + fileName,this.iTaskRepository);
 				}
 				else
 				{
@@ -1013,7 +1013,7 @@ public class ReaktorAdministrationRest
 
 				if (actionId.isPresent())
 				{
-					this.utils.addTasks(fileList, actionId.get(), Constants.FILE_FOLDER + execFile.getName(),this.iTaskRepository);
+					this.utils.addTasks(fileList, actionId.get(), Constants.REAKTOR_CONFIG_EXEC_FILES + File.separator + execFile.getName(),this.iTaskRepository);
 				}
 				else
 				{

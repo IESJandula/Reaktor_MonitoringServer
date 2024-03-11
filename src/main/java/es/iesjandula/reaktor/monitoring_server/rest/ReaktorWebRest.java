@@ -217,10 +217,10 @@ public class ReaktorWebRest
 	private ResponseEntity<?> executeFinalZipCommand(String finalZipCommand) throws IOException
 	{
 		//Se crea el entorno de ejecucion
-		Runtime rt = Runtime.getRuntime();
+		Runtime runtime = Runtime.getRuntime();
 		//Se llama a la cmd y se pone como argumento el comando para zipear una carpeta
-		Process pr = rt.exec("cmd.exe /c " + finalZipCommand);
-
+		runtime.exec("cmd.exe /c " + finalZipCommand);
+	
 		File file = new File("Compressed.zip");
 		byte[] bytesArray = Files.readAllBytes(file.toPath());
 

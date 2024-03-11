@@ -1,13 +1,33 @@
 package es.iesjandula.reaktor.monitoring_server.reaktor_actions;
 
-import es.iesjandula.reaktor.models.*;
-import es.iesjandula.reaktor.models.Id.MotherboardMalwareId;
-import es.iesjandula.reaktor.monitoring_server.repository.*;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import es.iesjandula.reaktor.models.Cpu;
+import es.iesjandula.reaktor.models.GraphicCard;
+import es.iesjandula.reaktor.models.HardDisk;
+import es.iesjandula.reaktor.models.InternetConnection;
+import es.iesjandula.reaktor.models.Malware;
+import es.iesjandula.reaktor.models.Motherboard;
+import es.iesjandula.reaktor.models.MotherboardMalware;
+import es.iesjandula.reaktor.models.NetworkCard;
+import es.iesjandula.reaktor.models.Partition;
+import es.iesjandula.reaktor.models.Ram;
+import es.iesjandula.reaktor.models.Reaktor;
+import es.iesjandula.reaktor.models.SoundCard;
+import es.iesjandula.reaktor.models.Id.MotherboardMalwareId;
+import es.iesjandula.reaktor.monitoring_server.repository.ICpuRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IGraphicCardRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IHardDiskRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardMalwareRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IMotherboardRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.INetworkCardRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IPartitionRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IRamRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.ISoundCardRepository;
+import es.iesjandula.reaktor.monitoring_server.repository.IinternetConnectionRepository;
 
 @Component
 public class ReaktorActions
@@ -23,13 +43,7 @@ public class ReaktorActions
     private IHardDiskRepository iHardDiskRepository;
 
     @Autowired
-    private IinternetConnectionNetworkCardRepository iinternetConnectionNetworkCardRepository;
-
-    @Autowired
     private IinternetConnectionRepository iinternetConnectionRepository;
-
-    @Autowired
-    private IMalwareRepository iMalwareRepository;
 
     @Autowired
     private IMotherboardMalwareRepository iMotherboardMalwareRepository;
