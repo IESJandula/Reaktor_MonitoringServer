@@ -14,44 +14,37 @@
 					{
 						"key": "serialNumber",
 						"value": "sn123",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "andaluciaId",
 						"value": "AND-V6KGX",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "computerNumber",
 						"value": "5D",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "classroom",
 						"value": "2DAM",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "trolley",
 						"value": "Trolley1",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "plant",
 						"value": "1",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "professor",
 						"value": "paco",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					}
 				],
 				"url": {
@@ -77,8 +70,7 @@
 					{
 						"key": "classroom",
 						"value": "2DAM",
-						"type": "text",
-						"disabled": true
+						"type": "text"
 					},
 					{
 						"key": "trolley",
