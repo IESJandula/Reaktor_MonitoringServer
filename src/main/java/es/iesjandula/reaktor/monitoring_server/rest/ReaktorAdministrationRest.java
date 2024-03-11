@@ -304,27 +304,25 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
-				//Devolvemos el estado satisfactorio de la operacion
+
+				// Controlamos si se ha seleccionado alguna opción. En caso de que sea vacío, devolver un error
+				if(shutdownList.isEmpty()) 
+				{
+					String error = "No se indicó ningún equipo a través de los filtros";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+
+        // Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
-			}
+      }
 			else
 			{
-				//Apagamos en todos los ordenadores
-				shutdownList = this.utils.addByAll(shutdownList,this.iMotherboardRepository);
-				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_SHUTDOWN);
-
-				if (actionId.isPresent())
-				{
-					this.utils.addTasks(shutdownList, actionId.get(), "",this.iTaskRepository);
-				}
-				else
-				{
-					String error = Constants.ERROR_FILE_CFG;
-					ComputerError computerError = new ComputerError(500, error);
-					return ResponseEntity.status(500).body(computerError.toMap());
-				}
-				log.info("By all Computers");
-				return ResponseEntity.ok().build();
+				String error = "Error no parameters found";
+				log.error(error);
+				ComputerError computerError = new ComputerError(400, error, null);
+				return ResponseEntity.status(400).body(computerError.toMap());
 			}
 		}
 		catch (Exception exception)
@@ -383,27 +381,25 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
-				//Devolvemos el estado satisfactorio de la operacion
+				
+				// Controlamos si se ha seleccionado alguna opción. En caso de que sea vacío, devolver un error
+				if(restartList.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
+        // Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else
-			{
-				restartList = this.utils.addByAll(restartList,this.iMotherboardRepository);
-				
-				Optional<Action> actionId = this.iActionRepository.findById(Constants.ACTION_RESTART);
-
-				if (actionId.isPresent())
-				{
-					this.utils.addTasks(restartList, actionId.get(), "",this.iTaskRepository);
-				}
-				else
-				{
-					String error = Constants.ERROR_FILE_CFG;
-					ComputerError computerError = new ComputerError(500, error);
-					return ResponseEntity.status(500).body(computerError.toMap());
-				}
-				log.info("By all Computers");
-				return ResponseEntity.ok().build();
+			{				
+				String error = "Error no parameters found";
+				log.error(error);
+				ComputerError computerError = new ComputerError(400, error, null);
+				return ResponseEntity.status(400).body(computerError.toMap());
 			}
 		}
 		catch (Exception exception)
@@ -480,7 +476,9 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
+        
 				log.info("By all Computers");
+        
 				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
@@ -539,6 +537,7 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
+        
 				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
@@ -559,7 +558,8 @@ public class ReaktorAdministrationRest
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 				log.info("By all Computers");
-				//Devolvemos el estado satisfactorio de la operacion
+				
+        // Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 		}
@@ -586,6 +586,7 @@ public class ReaktorAdministrationRest
 	@Operation
 	@RequestMapping(method = RequestMethod.POST, value = "/admin/software")
 	public ResponseEntity<?> sendSoftware(
+			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
 			@RequestHeader(required = false) String professor,
@@ -600,12 +601,13 @@ public class ReaktorAdministrationRest
 			 * y la clase introducida esta en la planta 1
 			 */
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
+
 			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
 			//la linea de comandos a todos los ordenadores
-			if ((classroom != null) || (trolley != null) || (professor != null))
+			if ((serialNumber != null) || (classroom != null) || (trolley != null) || (professor != null))
 			{
 				
-				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
+				motherboardSet = this.checker.checkAndSend(serialNumber, trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
 				
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_INSTALL);
 				
@@ -619,6 +621,18 @@ public class ReaktorAdministrationRest
 					ComputerError computerError = new ComputerError(500, error);
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
+
+				log.info("Parameters Used: " + methodsUsed);
+				
+			  // Controlamos si se ha seleccionado alguna opción. En caso de que sea vacío, devolver un error
+				if(motherboardSet.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
 				//Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
@@ -668,6 +682,7 @@ public class ReaktorAdministrationRest
 	@Operation
 	@RequestMapping(method = RequestMethod.DELETE, value = "/admin/software")
 	public ResponseEntity<?> unistallSoftware(
+			@RequestHeader(required = false) String serialNumber,
 			@RequestHeader(required = false) String classroom,
 			@RequestHeader(required = false) String trolley, 
 			@RequestHeader(required = false) String professor,
@@ -682,12 +697,13 @@ public class ReaktorAdministrationRest
 			 * y la clase introducida esta en la planta 1
 			 */
 			Set<Motherboard> motherboardSet = new HashSet<Motherboard>();
+
 			//Se comprueba que los parametros no sean nulos, en caso de que lo sean se envia
 			//la linea de comandos a todos los ordenadores
-			if ((classroom != null) || (trolley != null) || (professor!=null))
+			if ((professor != null) || (serialNumber != null) || (classroom != null) || (trolley != null))
 			{
 				motherboardSet = this.checker.checkAndSend(trolley, classroom, professor, motherboardSet,this.iMotherboardRepository);
-				
+
 				// BUSCAMOS ACCION
 				Optional<Action> action = this.iActionRepository.findById(Constants.ACTION_UNINSTALL);
 				
@@ -702,7 +718,18 @@ public class ReaktorAdministrationRest
 					return ResponseEntity.status(500).body(computerError.toMap());
 				}
 
-				//Devolvemos el estado satisfactorio de la operacion
+				log.info("Parameters Used: " + methodsUsed);
+				
+				// --- CONTROL NO MATCHES FOUND ----
+				if(motherboardSet.isEmpty()) 
+				{
+					String error = "Error no matches found";
+					log.error(error);
+					ComputerError computerError = new ComputerError(400, error, null);
+					return ResponseEntity.status(400).body(computerError.toMap());
+				}
+				
+				// Devolvemos el estado satisfactorio de la operacion
 				return ResponseEntity.ok().build();
 			}
 			else

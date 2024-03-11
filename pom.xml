@@ -74,27 +74,22 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>2.7.5</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>
-                                es.iesjandula.reaktor.monitoring_server.MonitoringServerApplication</mainClass>
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <mainClass>es.iesjandula.reaktor.monitoring_server.MonitoringServerApplication</mainClass>
+                    <skip>false</skip>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
                         <goals>
-                            <goal>single</goal>
+                            <goal>repackage</goal>
                         </goals>
+                        <configuration>
+                            <classifier>jar-with-dependencies</classifier>
+                            <mainClass>es.iesjandula.reaktor.monitoring_server.MonitoringServerApplication</mainClass>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
